@@ -17,6 +17,11 @@ namespace ve {
 
         VkWindow(int w, int h, std::string name);
         ~VkWindow();
+        
+        //deleting copy constructors
+        VkWindow(const VkWindow &) = delete;
+        VkWindow &operator=(const VkWindow &) = delete;
+
         void initWindow();
 
         bool shouldClose();
