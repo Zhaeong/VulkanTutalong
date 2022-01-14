@@ -19,6 +19,7 @@ namespace ve {
         ~VkWindow();
         
         //deleting copy constructors
+        //For singletons where only one instance of the class will exist
         VkWindow(const VkWindow &) = delete;
         VkWindow &operator=(const VkWindow &) = delete;
 
