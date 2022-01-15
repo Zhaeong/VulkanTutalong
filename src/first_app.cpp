@@ -2,7 +2,7 @@
 
 namespace ve {
 void FirstApp::run() {
-  std::cout << "In Run";
+  std::cout << "In Run\n";
 
   while (!vkWindow.shouldClose()) {
     glfwPollEvents();
