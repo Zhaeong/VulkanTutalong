@@ -8,25 +8,23 @@
 #include <string>
 
 namespace ve {
-    class VkWindow{
-        public:
-        GLFWwindow *window;
-        int width;
-        int height;
-        std::string windowName;
+class VkWindow {
+public:
+  GLFWwindow *window;
+  int width;
+  int height;
+  std::string windowName;
 
-        VkWindow(int w, int h, std::string name);
-        ~VkWindow();
-        
-        //deleting copy constructors
-        //For singletons where only one instance of the class will exist
-        VkWindow(const VkWindow &) = delete;
-        VkWindow &operator=(const VkWindow &) = delete;
+  VkWindow(int w, int h, std::string name);
+  ~VkWindow();
 
-        void initWindow();
+  // deleting copy constructors
+  // For singletons where only one instance of the class will exist
+  VkWindow(const VkWindow &) = delete;
+  VkWindow &operator=(const VkWindow &) = delete;
 
-        bool shouldClose();
+  void initWindow();
 
-
-    };
-}
+  bool shouldClose();
+};
+} // namespace ve
