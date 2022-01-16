@@ -7,29 +7,35 @@
 #include <GLFW/glfw3.h>
 #include <cstring>
 #include <optional>
+#include <set>
 #include <string>
 #include <vector>
+#include <vk_window.hpp>
 
 namespace ve {
 
 struct QueueFamilyIndices {
   std::optional<uint32_t> graphicsFamily;
+  std::optional<uint32_t> presentFamily;
 };
 
 class VkEngineDevice {
 public:
+  VkWindow &vkWindow;
   VkInstance instance;
 
+  VkSurfaceKHR surface;
   // actual physical device
   VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
   // logical device
   VkDevice logicalDevice;
 
   VkQueue graphicsQueue;
+  VkQueue presentQueue;
 
   VkDebugUtilsMessengerEXT debugMessenger;
 
-  VkEngineDevice();
+  VkEngineDevice(VkWindow &window);
   ~VkEngineDevice();
 
   const std::vector<const char *> validationLayers = {
@@ -71,5 +77,7 @@ public:
   bool isDeviceSuitable(VkPhysicalDevice device);
 
   QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+
+  void createSurface();
 };
 } // namespace ve

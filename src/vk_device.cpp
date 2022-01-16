@@ -1,9 +1,11 @@
 #include "vk_device.hpp"
 
 namespace ve {
-VkEngineDevice::VkEngineDevice() {
+VkEngineDevice::VkEngineDevice(VkWindow &window) : vkWindow{window} {
+  // vkWindow = window;
   createInstance();
   setupDebugMessenger();
+  createSurface();
   pickPhysicalDevice();
   createLogicalDevice();
 }
@@ -15,6 +17,7 @@ VkEngineDevice::~VkEngineDevice() {
   std::cout << "Cleaning up VkEngineDevice Init\n";
   // have to destroy logical device first it seems
   vkDestroyDevice(logicalDevice, nullptr);
+  vkDestroySurfaceKHR(instance, surface, nullptr);
   vkDestroyInstance(instance, nullptr);
 }
 
@@ -229,7 +232,8 @@ bool VkEngineDevice::isDeviceSuitable(VkPhysicalDevice device) {
 
   QueueFamilyIndices indices = findQueueFamilies(device);
 
-  return indices.graphicsFamily.has_value();
+  return indices.graphicsFamily.has_value() &&
+         indices.presentFamily.has_value();
 }
 
 QueueFamilyIndices VkEngineDevice::findQueueFamilies(VkPhysicalDevice device) {
@@ -249,6 +253,15 @@ QueueFamilyIndices VkEngineDevice::findQueueFamilies(VkPhysicalDevice device) {
       std::cout << "Graphics Index: " << i << " Queuecount"
                 << queueFamilies[i].queueCount << "\n";
     }
+    // Find if the device supports window system and present images to the
+    // surface we created
+    VkBool32 presentSupport = false;
+    vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+    if (presentSupport) {
+      indices.presentFamily = i;
+      std::cout << "Present Queue family Index: " << i << " Queuecount"
+                << queueFamilies[i].queueCount << "\n";
+    }
   }
   return indices;
 }
@@ -257,15 +270,26 @@ void VkEngineDevice::createLogicalDevice() {
 
   // Specifying queues to be created
   QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
-  VkDeviceQueueCreateInfo queueCreateInfo{};
-  queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-  queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
-  queueCreateInfo.queueCount = 1;
+
+  std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+
+  // set will only contain unique values
+  std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(),
+                                            indices.presentFamily.value()};
 
   // Assigns priorty to queues to influence scheduling of comand buffer
   // execution
   float queuePriority = 1.0f;
-  queueCreateInfo.pQueuePriorities = &queuePriority;
+  for (int i = 0; i < uniqueQueueFamilies.size(); i++) {
+
+    VkDeviceQueueCreateInfo queueCreateInfo{};
+    queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queueCreateInfo.queueFamilyIndex = i;
+    queueCreateInfo.queueCount = 1;
+
+    queueCreateInfo.pQueuePriorities = &queuePriority;
+    queueCreateInfos.push_back(queueCreateInfo);
+  }
 
   // Specifying used device features
   VkPhysicalDeviceFeatures deviceFeatures{};
@@ -273,8 +297,9 @@ void VkEngineDevice::createLogicalDevice() {
   VkDeviceCreateInfo createInfo{};
   createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
-  createInfo.pQueueCreateInfos = &queueCreateInfo;
-  createInfo.queueCreateInfoCount = 1;
+  createInfo.pQueueCreateInfos = queueCreateInfos.data();
+  createInfo.queueCreateInfoCount =
+      static_cast<uint32_t>(queueCreateInfos.size());
 
   createInfo.pEnabledFeatures = &deviceFeatures;
   createInfo.enabledExtensionCount = 0;
@@ -294,6 +319,17 @@ void VkEngineDevice::createLogicalDevice() {
 
   vkGetDeviceQueue(logicalDevice, indices.graphicsFamily.value(), 0,
                    &graphicsQueue);
+
+  // Now create the present queue
+  vkGetDeviceQueue(logicalDevice, indices.presentFamily.value(), 0,
+                   &presentQueue);
+}
+
+void VkEngineDevice::createSurface() {
+  if (glfwCreateWindowSurface(instance, vkWindow.window, nullptr, &surface) !=
+      VK_SUCCESS) {
+    throw std::runtime_error("failed to create window surface!");
+  }
 }
 
 } // namespace ve

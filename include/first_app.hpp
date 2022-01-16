@@ -15,7 +15,7 @@ public:
 
   VkPipeline vkPipeline{"../shaders/simple_shader.vert.spv",
                         "../shaders/simple_shader.frag.spv"};
-  VkEngineDevice vkEngineDevice{};
+  VkEngineDevice vkEngineDevice{vkWindow};
 
   void run();
 };
