@@ -1,20 +1,24 @@
 #include "vk_device.hpp"
 
 namespace ve {
-VkDevice::VkDevice() {
+VkEngineDevice::VkEngineDevice() {
   createInstance();
   setupDebugMessenger();
+  pickPhysicalDevice();
+  createLogicalDevice();
 }
-VkDevice::~VkDevice() {
+VkEngineDevice::~VkEngineDevice() {
   if (enableValidationLayers) {
     // Can remove this line to trigger validation layer error
     DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
   }
-  std::cout << "Cleaning up VkDevice Init\n";
+  std::cout << "Cleaning up VkEngineDevice Init\n";
+  // have to destroy logical device first it seems
+  vkDestroyDevice(logicalDevice, nullptr);
   vkDestroyInstance(instance, nullptr);
 }
 
-void VkDevice::createInstance() {
+void VkEngineDevice::createInstance() {
 
   if (enableValidationLayers && !checkValidationLayerSupport()) {
     throw std::runtime_error("Validation Layer requested but not available\n");
@@ -70,7 +74,7 @@ void VkDevice::createInstance() {
   std::cout << "available extensions:\n";
 }
 
-bool VkDevice::checkValidationLayerSupport() {
+bool VkEngineDevice::checkValidationLayerSupport() {
   uint32_t layerCount;
   vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 
@@ -98,7 +102,7 @@ bool VkDevice::checkValidationLayerSupport() {
   return true;
 }
 
-std::vector<const char *> VkDevice::getRequiredVkExtensions() {
+std::vector<const char *> VkEngineDevice::getRequiredVkExtensions() {
 
   uint32_t glfwExtensionCount = 0;
   const char **glfwExtensions;
@@ -123,7 +127,7 @@ std::vector<const char *> VkDevice::getRequiredVkExtensions() {
   return requiredVkExtensionsForGLFW;
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL VkDevice::debugCallback(
+VKAPI_ATTR VkBool32 VKAPI_CALL VkEngineDevice::debugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT messageType,
     const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
@@ -136,7 +140,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VkDevice::debugCallback(
   return VK_FALSE;
 }
 
-void VkDevice::populateDebugMessengerCreateInfo(
+void VkEngineDevice::populateDebugMessengerCreateInfo(
     VkDebugUtilsMessengerCreateInfoEXT &createInfo) {
   createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
   // VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT
@@ -152,7 +156,7 @@ void VkDevice::populateDebugMessengerCreateInfo(
   // createInfo.pUserData = nullptr; // Optional
   createInfo.pUserData = userDataVoidPtr;
 }
-void VkDevice::setupDebugMessenger() {
+void VkEngineDevice::setupDebugMessenger() {
   if (!enableValidationLayers) {
     return;
   }
@@ -165,7 +169,7 @@ void VkDevice::setupDebugMessenger() {
   }
 }
 
-VkResult VkDevice::CreateDebugUtilsMessengerEXT(
+VkResult VkEngineDevice::CreateDebugUtilsMessengerEXT(
     VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
     const VkAllocationCallbacks *pAllocator,
     VkDebugUtilsMessengerEXT *pDebugMessenger) {
@@ -178,7 +182,7 @@ VkResult VkDevice::CreateDebugUtilsMessengerEXT(
   }
 }
 
-void VkDevice::DestroyDebugUtilsMessengerEXT(
+void VkEngineDevice::DestroyDebugUtilsMessengerEXT(
     VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,
     const VkAllocationCallbacks *pAllocator) {
   auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
@@ -187,4 +191,109 @@ void VkDevice::DestroyDebugUtilsMessengerEXT(
     func(instance, debugMessenger, pAllocator);
   }
 }
+
+void VkEngineDevice::pickPhysicalDevice() {
+  uint32_t deviceCount = 0;
+  vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+  if (deviceCount == 0) {
+    throw std::runtime_error("failed to find GPUs with Vulkan support!");
+  } else {
+    std::cout << "Num Physical Devices: " << deviceCount << "\n";
+  }
+
+  std::vector<VkPhysicalDevice> vPhysicalDevices(deviceCount);
+  vkEnumeratePhysicalDevices(instance, &deviceCount, vPhysicalDevices.data());
+
+  for (int i = 0; i < vPhysicalDevices.size(); i++) {
+    if (isDeviceSuitable(vPhysicalDevices[i])) {
+      physicalDevice = vPhysicalDevices[i];
+      break;
+    }
+  }
+
+  if (physicalDevice == VK_NULL_HANDLE) {
+    throw std::runtime_error("Failed to find Physical Device");
+  }
+}
+
+bool VkEngineDevice::isDeviceSuitable(VkPhysicalDevice device) {
+
+  VkPhysicalDeviceProperties deviceProperties;
+  VkPhysicalDeviceFeatures deviceFeatures;
+
+  vkGetPhysicalDeviceProperties(device, &deviceProperties);
+  vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+  std::cout << "Device Name: " << deviceProperties.deviceName
+            << " Device ID: " << deviceProperties.deviceID << "\n";
+
+  QueueFamilyIndices indices = findQueueFamilies(device);
+
+  return indices.graphicsFamily.has_value();
+}
+
+QueueFamilyIndices VkEngineDevice::findQueueFamilies(VkPhysicalDevice device) {
+  QueueFamilyIndices indices;
+
+  uint32_t queueFamilyCount = 0;
+  vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+  std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+
+  vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount,
+                                           queueFamilies.data());
+
+  for (int i = 0; i < queueFamilies.size(); i++) {
+    if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+      indices.graphicsFamily = i;
+      std::cout << "Graphics Index: " << i << " Queuecount"
+                << queueFamilies[i].queueCount << "\n";
+    }
+  }
+  return indices;
+}
+
+void VkEngineDevice::createLogicalDevice() {
+
+  // Specifying queues to be created
+  QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+  VkDeviceQueueCreateInfo queueCreateInfo{};
+  queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+  queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
+  queueCreateInfo.queueCount = 1;
+
+  // Assigns priorty to queues to influence scheduling of comand buffer
+  // execution
+  float queuePriority = 1.0f;
+  queueCreateInfo.pQueuePriorities = &queuePriority;
+
+  // Specifying used device features
+  VkPhysicalDeviceFeatures deviceFeatures{};
+
+  VkDeviceCreateInfo createInfo{};
+  createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+
+  createInfo.pQueueCreateInfos = &queueCreateInfo;
+  createInfo.queueCreateInfoCount = 1;
+
+  createInfo.pEnabledFeatures = &deviceFeatures;
+  createInfo.enabledExtensionCount = 0;
+
+  if (enableValidationLayers) {
+    createInfo.enabledLayerCount =
+        static_cast<uint32_t>(validationLayers.size());
+    createInfo.ppEnabledLayerNames = validationLayers.data();
+  } else {
+    createInfo.enabledLayerCount = 0;
+  }
+
+  if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &logicalDevice) !=
+      VK_SUCCESS) {
+    throw std::runtime_error("failed to create logical device!");
+  }
+
+  vkGetDeviceQueue(logicalDevice, indices.graphicsFamily.value(), 0,
+                   &graphicsQueue);
+}
+
 } // namespace ve

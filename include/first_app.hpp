@@ -5,7 +5,6 @@
 #include "vk_window.hpp"
 #include <iostream>
 
-
 namespace ve {
 class FirstApp {
 public:
@@ -16,7 +15,7 @@ public:
 
   VkPipeline vkPipeline{"../shaders/simple_shader.vert.spv",
                         "../shaders/simple_shader.frag.spv"};
-  VkDevice vkDevice{};
+  VkEngineDevice vkEngineDevice{};
 
   void run();
 };
