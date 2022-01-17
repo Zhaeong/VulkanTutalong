@@ -7,7 +7,6 @@
 #include <string>
 #include <vector>
 
-
 #include <vulkan/vulkan.h>
 
 #include <vk_device.hpp>
@@ -15,15 +14,15 @@ namespace ve {
 struct PipelineConfigInfo {
   VkViewport viewport;
   VkRect2D scissor;
-  VkPipelineViewportStateCreateInfo viewportStateInfo;
+  // VkPipelineViewportStateCreateInfo viewportStateInfo;
   VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo;
   VkPipelineRasterizationStateCreateInfo rasterizationInfo;
   VkPipelineMultisampleStateCreateInfo multisampleInfo;
   VkPipelineColorBlendAttachmentState colorBlendAttachment;
   VkPipelineColorBlendStateCreateInfo colorBlendInfo;
   VkPipelineDepthStencilStateCreateInfo depthStencilInfo;
-  VkPipelineLayout pipelineLayout = nullptr;
-  VkRenderPass renderPass = nullptr;
+  // VkPipelineLayout pipelineLayout = nullptr;
+  // VkRenderPass renderPass = nullptr;
   uint32_t subpass = 0;
 };
 class VkEnginePipeline {
@@ -32,6 +31,9 @@ public:
   VkPipeline graphicsPipeline;
   VkShaderModule vertShaderModule;
   VkShaderModule fragShaderModule;
+
+  VkPipelineLayout pipelineLayout = nullptr;
+  VkRenderPass renderPass;
 
   // deleting copy constructors
   VkEnginePipeline(const VkEnginePipeline &) = delete;
@@ -53,6 +55,8 @@ public:
 
   static PipelineConfigInfo defaultPipelineConfigInfo(uint32_t width,
                                                       uint32_t height);
+
+  void createRenderPass();
 };
 
 } // namespace ve

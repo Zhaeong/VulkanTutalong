@@ -7,6 +7,7 @@ VkEnginePipeline::VkEnginePipeline(VkEngineDevice &eDevice,
                                    const std::string &vertFilepath,
                                    const std::string &fragFilepath)
     : engineDevice{eDevice} {
+  createRenderPass();
   createGraphicsPipeline(vertFilepath, fragFilepath, pipelineConfig);
 }
 
@@ -15,6 +16,8 @@ VkEnginePipeline::~VkEnginePipeline() {
   vkDestroyShaderModule(engineDevice.logicalDevice, fragShaderModule, nullptr);
   vkDestroyShaderModule(engineDevice.logicalDevice, vertShaderModule, nullptr);
   vkDestroyPipeline(engineDevice.logicalDevice, graphicsPipeline, nullptr);
+  vkDestroyPipelineLayout(engineDevice.logicalDevice, pipelineLayout, nullptr);
+  vkDestroyRenderPass(engineDevice.logicalDevice, renderPass, nullptr);
 }
 
 std::vector<char> VkEnginePipeline::readFile(const std::string &filePath) {
@@ -44,10 +47,12 @@ void VkEnginePipeline::createGraphicsPipeline(
     const std::string &vertFilepath, const std::string &fragFilepath,
     const PipelineConfigInfo &pipelineConfig) {
 
-  assert(pipelineConfig.pipelineLayout != VK_NULL_HANDLE &&
-         "Cannot create graphics pipeline: no pipelineLayout in config");
-  assert(pipelineConfig.renderPass != VK_NULL_HANDLE &&
-         "Cannot create graphics pipeline: no renderpass in config");
+  /*
+    assert(pipelineConfig.pipelineLayout != VK_NULL_HANDLE &&
+           "Cannot create graphics pipeline: no pipelineLayout in config");
+    assert(pipelineConfig.renderPass != VK_NULL_HANDLE &&
+           "Cannot create graphics pipeline: no renderpass in config");
+           */
   auto vertCode = readFile(vertFilepath);
   auto fragCode = readFile(fragFilepath);
 
@@ -90,6 +95,31 @@ void VkEnginePipeline::createGraphicsPipeline(
   vertexInputInfo.vertexAttributeDescriptionCount = 0;
   vertexInputInfo.pVertexAttributeDescriptions = nullptr; // Optional
 
+  //***************************************************
+  // Viewport info
+
+  VkPipelineViewportStateCreateInfo viewportStateInfo{};
+  viewportStateInfo.sType =
+      VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+  viewportStateInfo.viewportCount = 1;
+  viewportStateInfo.pViewports = &pipelineConfig.viewport;
+  viewportStateInfo.scissorCount = 1;
+  viewportStateInfo.pScissors = &pipelineConfig.scissor;
+
+  // Pipeline layout
+
+  VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+  pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+  pipelineLayoutInfo.setLayoutCount = 0;            // Optional
+  pipelineLayoutInfo.pSetLayouts = nullptr;         // Optional
+  pipelineLayoutInfo.pushConstantRangeCount = 0;    // Optional
+  pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+
+  if (vkCreatePipelineLayout(engineDevice.logicalDevice, &pipelineLayoutInfo,
+                             nullptr, &pipelineLayout) != VK_SUCCESS) {
+    throw std::runtime_error("failed to create pipeline layout!");
+  }
+
   VkGraphicsPipelineCreateInfo pipelineInfo{};
   pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
   pipelineInfo.stageCount = 2;
@@ -97,7 +127,7 @@ void VkEnginePipeline::createGraphicsPipeline(
 
   pipelineInfo.pVertexInputState = &vertexInputInfo;
   pipelineInfo.pInputAssemblyState = &pipelineConfig.inputAssemblyInfo;
-  pipelineInfo.pViewportState = &pipelineConfig.viewportStateInfo;
+  pipelineInfo.pViewportState = &viewportStateInfo;
   pipelineInfo.pRasterizationState = &pipelineConfig.rasterizationInfo;
   pipelineInfo.pMultisampleState = &pipelineConfig.multisampleInfo;
   pipelineInfo.pDepthStencilState =
@@ -105,8 +135,8 @@ void VkEnginePipeline::createGraphicsPipeline(
   pipelineInfo.pColorBlendState = &pipelineConfig.colorBlendInfo;
   pipelineInfo.pDynamicState = nullptr; // Optional
 
-  pipelineInfo.layout = pipelineConfig.pipelineLayout;
-  pipelineInfo.renderPass = pipelineConfig.renderPass;
+  pipelineInfo.layout = pipelineLayout;
+  pipelineInfo.renderPass = renderPass;
   pipelineInfo.subpass = pipelineConfig.subpass;
 
   pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
@@ -181,15 +211,6 @@ VkEnginePipeline::defaultPipelineConfigInfo(uint32_t width, uint32_t height) {
   // scissor
   configInfo.scissor.offset = {0, 0};
   configInfo.scissor.extent = {width, height};
-
-  //***************************************************
-  // Viewport info
-  configInfo.viewportStateInfo.sType =
-      VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-  configInfo.viewportStateInfo.viewportCount = 1;
-  configInfo.viewportStateInfo.pViewports = &configInfo.viewport;
-  configInfo.viewportStateInfo.scissorCount = 1;
-  configInfo.viewportStateInfo.pScissors = &configInfo.scissor;
 
   //***************************************************
   // Rasterizer
@@ -305,6 +326,40 @@ VkEnginePipeline::defaultPipelineConfigInfo(uint32_t width, uint32_t height) {
   //***************************************************
 
   return configInfo;
+}
+
+void VkEnginePipeline::createRenderPass() {
+  VkAttachmentDescription colorAttachment{};
+  colorAttachment.format = engineDevice.swapChainImageFormat;
+  colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+  colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+  colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+  colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+  colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+  colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+  colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+  VkAttachmentReference colorAttachmentRef{};
+  colorAttachmentRef.attachment = 0;
+  colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+  VkSubpassDescription subpass{};
+  subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+  subpass.colorAttachmentCount = 1;
+  subpass.pColorAttachments = &colorAttachmentRef;
+
+  VkRenderPassCreateInfo renderPassInfo{};
+  renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+  renderPassInfo.attachmentCount = 1;
+  renderPassInfo.pAttachments = &colorAttachment;
+  renderPassInfo.subpassCount = 1;
+  renderPassInfo.pSubpasses = &subpass;
+
+  if (vkCreateRenderPass(engineDevice.logicalDevice, &renderPassInfo, nullptr,
+                         &renderPass) != VK_SUCCESS) {
+    throw std::runtime_error("failed to create render pass!");
+  }
 }
 
 } // namespace ve
