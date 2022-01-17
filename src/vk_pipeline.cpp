@@ -8,9 +8,7 @@ VkEnginePipeline::VkEnginePipeline(VkEngineDevice &eDevice,
                                    const std::string &vertFilepath,
                                    const std::string &fragFilepath)
     : engineDevice{eDevice}, engineSwapChain{eSwapChain} {
-  createRenderPass();
   createGraphicsPipeline(vertFilepath, fragFilepath, pipelineConfig);
-  createFramebuffers();
 }
 
 VkEnginePipeline::~VkEnginePipeline() {
@@ -20,11 +18,6 @@ VkEnginePipeline::~VkEnginePipeline() {
   vkDestroyShaderModule(engineDevice.logicalDevice, vertShaderModule, nullptr);
   vkDestroyPipeline(engineDevice.logicalDevice, graphicsPipeline, nullptr);
   vkDestroyPipelineLayout(engineDevice.logicalDevice, pipelineLayout, nullptr);
-  vkDestroyRenderPass(engineDevice.logicalDevice, renderPass, nullptr);
-
-  for (auto framebuffer : swapChainFramebuffers) {
-    vkDestroyFramebuffer(engineDevice.logicalDevice, framebuffer, nullptr);
-  }
 }
 
 std::vector<char> VkEnginePipeline::readFile(const std::string &filePath) {
@@ -143,7 +136,7 @@ void VkEnginePipeline::createGraphicsPipeline(
   pipelineInfo.pDynamicState = nullptr; // Optional
 
   pipelineInfo.layout = pipelineLayout;
-  pipelineInfo.renderPass = renderPass;
+  pipelineInfo.renderPass = engineSwapChain.renderPass;
   pipelineInfo.subpass = pipelineConfig.subpass;
 
   pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
@@ -333,61 +326,6 @@ VkEnginePipeline::defaultPipelineConfigInfo(uint32_t width, uint32_t height) {
   //***************************************************
 
   return configInfo;
-}
-
-void VkEnginePipeline::createRenderPass() {
-  VkAttachmentDescription colorAttachment{};
-  colorAttachment.format = engineSwapChain.swapChainImageFormat;
-  colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-  colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-  colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-
-  colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-  colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-  colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-  colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-  VkAttachmentReference colorAttachmentRef{};
-  colorAttachmentRef.attachment = 0;
-  colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-  VkSubpassDescription subpass{};
-  subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-  subpass.colorAttachmentCount = 1;
-  subpass.pColorAttachments = &colorAttachmentRef;
-
-  VkRenderPassCreateInfo renderPassInfo{};
-  renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-  renderPassInfo.attachmentCount = 1;
-  renderPassInfo.pAttachments = &colorAttachment;
-  renderPassInfo.subpassCount = 1;
-  renderPassInfo.pSubpasses = &subpass;
-
-  if (vkCreateRenderPass(engineDevice.logicalDevice, &renderPassInfo, nullptr,
-                         &renderPass) != VK_SUCCESS) {
-    throw std::runtime_error("failed to create render pass!");
-  }
-}
-void VkEnginePipeline::createFramebuffers() {
-  swapChainFramebuffers.resize(engineSwapChain.swapChainImageViews.size());
-
-  for (size_t i = 0; i < engineSwapChain.swapChainImageViews.size(); i++) {
-    VkImageView attachments[] = {engineSwapChain.swapChainImageViews[i]};
-
-    VkFramebufferCreateInfo framebufferInfo{};
-    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    framebufferInfo.renderPass = renderPass;
-    framebufferInfo.attachmentCount = 1;
-    framebufferInfo.pAttachments = attachments;
-    framebufferInfo.width = engineSwapChain.swapChainExtent.width;
-    framebufferInfo.height = engineSwapChain.swapChainExtent.height;
-    framebufferInfo.layers = 1;
-
-    if (vkCreateFramebuffer(engineDevice.logicalDevice, &framebufferInfo,
-                            nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS) {
-      throw std::runtime_error("failed to create framebuffer!");
-    }
-  }
 }
 
 } // namespace ve

@@ -36,15 +36,6 @@ public:
   VkShaderModule fragShaderModule;
 
   VkPipelineLayout pipelineLayout = nullptr;
-  VkRenderPass renderPass;
-  VkCommandPool commandPool = VK_NULL_HANDLE;
-
-  std::vector<VkFramebuffer> swapChainFramebuffers;
-
-  std::vector<VkCommandBuffer> commandBuffers;
-
-  VkSemaphore imageAvailableSemaphore;
-  VkSemaphore renderFinishedSemaphore;
 
   // deleting copy constructors
   VkEnginePipeline(const VkEnginePipeline &) = delete;
@@ -66,9 +57,6 @@ public:
 
   static PipelineConfigInfo defaultPipelineConfigInfo(uint32_t width,
                                                       uint32_t height);
-
-  void createRenderPass();
-  void createFramebuffers();
 };
 
 } // namespace ve

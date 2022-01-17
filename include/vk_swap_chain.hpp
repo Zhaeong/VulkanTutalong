@@ -19,13 +19,25 @@ public:
   // image views
   std::vector<VkImageView> swapChainImageViews;
 
+  // renderpass
+  VkRenderPass renderPass;
+  VkCommandPool commandPool = VK_NULL_HANDLE;
+
   std::vector<VkFramebuffer> swapChainFramebuffers;
+
+  std::vector<VkCommandBuffer> commandBuffers;
+
+  VkSemaphore imageAvailableSemaphore;
+  VkSemaphore renderFinishedSemaphore;
 
   VkEngineSwapChain(VkEngineDevice &eDevice);
   ~VkEngineSwapChain();
 
   void createSwapChain();
   void createImageViews();
+
+  void createRenderPass();
+  void createFramebuffers();
 
   VkSurfaceFormatKHR chooseSwapSurfaceFormat(
       const std::vector<VkSurfaceFormatKHR> &availableFormats);
