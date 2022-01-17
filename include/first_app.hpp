@@ -2,6 +2,7 @@
 
 #include "vk_device.hpp"
 #include "vk_pipeline.hpp"
+#include "vk_swap_chain.hpp"
 #include "vk_window.hpp"
 #include <iostream>
 
@@ -15,8 +16,10 @@ public:
 
   VkEngineDevice vkEngineDevice{vkWindow};
 
+  VkEngineSwapChain vkEngineSwapChain{vkEngineDevice};
+
   VkEnginePipeline vkEnginePipeline{
-      vkEngineDevice,
+      vkEngineDevice, vkEngineSwapChain,
       VkEnginePipeline::defaultPipelineConfigInfo(WIDTH, HEIGHT),
       "../shaders/simple_shader.vert.spv", "../shaders/simple_shader.frag.spv"};
 

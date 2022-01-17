@@ -1,0 +1,38 @@
+#pragma once
+
+#include "vk_device.hpp"
+#include <iostream>
+#include <vector>
+#include <vulkan/vulkan.h>
+
+namespace ve {
+class VkEngineSwapChain {
+public:
+  VkEngineDevice engineDevice;
+
+  VkSwapchainKHR swapChain;
+  std::vector<VkImage> swapChainImages;
+
+  VkFormat swapChainImageFormat;
+  VkExtent2D swapChainExtent;
+
+  // image views
+  std::vector<VkImageView> swapChainImageViews;
+
+  std::vector<VkFramebuffer> swapChainFramebuffers;
+
+  VkEngineSwapChain(VkEngineDevice &eDevice);
+  ~VkEngineSwapChain();
+
+  void createSwapChain();
+  void createImageViews();
+
+  VkSurfaceFormatKHR chooseSwapSurfaceFormat(
+      const std::vector<VkSurfaceFormatKHR> &availableFormats);
+
+  VkPresentModeKHR chooseSwapPresentMode(
+      const std::vector<VkPresentModeKHR> &availablePresentModes);
+
+  VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
+};
+} // namespace ve

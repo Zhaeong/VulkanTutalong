@@ -10,6 +10,7 @@
 #include <vulkan/vulkan.h>
 
 #include <vk_device.hpp>
+#include <vk_swap_chain.hpp>
 namespace ve {
 struct PipelineConfigInfo {
   VkViewport viewport;
@@ -28,18 +29,28 @@ struct PipelineConfigInfo {
 class VkEnginePipeline {
 public:
   VkEngineDevice &engineDevice;
+  VkEngineSwapChain &engineSwapChain;
+
   VkPipeline graphicsPipeline;
   VkShaderModule vertShaderModule;
   VkShaderModule fragShaderModule;
 
   VkPipelineLayout pipelineLayout = nullptr;
   VkRenderPass renderPass;
+  VkCommandPool commandPool = VK_NULL_HANDLE;
+
+  std::vector<VkFramebuffer> swapChainFramebuffers;
+
+  std::vector<VkCommandBuffer> commandBuffers;
+
+  VkSemaphore imageAvailableSemaphore;
+  VkSemaphore renderFinishedSemaphore;
 
   // deleting copy constructors
   VkEnginePipeline(const VkEnginePipeline &) = delete;
   void operator=(const VkEnginePipeline &) = delete;
 
-  VkEnginePipeline(VkEngineDevice &eDevice,
+  VkEnginePipeline(VkEngineDevice &eDevice, VkEngineSwapChain &eSwapChain,
                    const PipelineConfigInfo &pipelineConfig,
                    const std::string &vertFilepath,
                    const std::string &fragFilepath);
@@ -57,6 +68,7 @@ public:
                                                       uint32_t height);
 
   void createRenderPass();
+  void createFramebuffers();
 };
 
 } // namespace ve

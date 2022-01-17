@@ -3,21 +3,28 @@
 namespace ve {
 
 VkEnginePipeline::VkEnginePipeline(VkEngineDevice &eDevice,
+                                   VkEngineSwapChain &eSwapChain,
                                    const PipelineConfigInfo &pipelineConfig,
                                    const std::string &vertFilepath,
                                    const std::string &fragFilepath)
-    : engineDevice{eDevice} {
+    : engineDevice{eDevice}, engineSwapChain{eSwapChain} {
   createRenderPass();
   createGraphicsPipeline(vertFilepath, fragFilepath, pipelineConfig);
+  createFramebuffers();
 }
 
 VkEnginePipeline::~VkEnginePipeline() {
 
+  std::cout << "Cleaning up VkEnginePipeline Init\n";
   vkDestroyShaderModule(engineDevice.logicalDevice, fragShaderModule, nullptr);
   vkDestroyShaderModule(engineDevice.logicalDevice, vertShaderModule, nullptr);
   vkDestroyPipeline(engineDevice.logicalDevice, graphicsPipeline, nullptr);
   vkDestroyPipelineLayout(engineDevice.logicalDevice, pipelineLayout, nullptr);
   vkDestroyRenderPass(engineDevice.logicalDevice, renderPass, nullptr);
+
+  for (auto framebuffer : swapChainFramebuffers) {
+    vkDestroyFramebuffer(engineDevice.logicalDevice, framebuffer, nullptr);
+  }
 }
 
 std::vector<char> VkEnginePipeline::readFile(const std::string &filePath) {
@@ -330,7 +337,7 @@ VkEnginePipeline::defaultPipelineConfigInfo(uint32_t width, uint32_t height) {
 
 void VkEnginePipeline::createRenderPass() {
   VkAttachmentDescription colorAttachment{};
-  colorAttachment.format = engineDevice.swapChainImageFormat;
+  colorAttachment.format = engineSwapChain.swapChainImageFormat;
   colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
   colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
   colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -359,6 +366,27 @@ void VkEnginePipeline::createRenderPass() {
   if (vkCreateRenderPass(engineDevice.logicalDevice, &renderPassInfo, nullptr,
                          &renderPass) != VK_SUCCESS) {
     throw std::runtime_error("failed to create render pass!");
+  }
+}
+void VkEnginePipeline::createFramebuffers() {
+  swapChainFramebuffers.resize(engineSwapChain.swapChainImageViews.size());
+
+  for (size_t i = 0; i < engineSwapChain.swapChainImageViews.size(); i++) {
+    VkImageView attachments[] = {engineSwapChain.swapChainImageViews[i]};
+
+    VkFramebufferCreateInfo framebufferInfo{};
+    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebufferInfo.renderPass = renderPass;
+    framebufferInfo.attachmentCount = 1;
+    framebufferInfo.pAttachments = attachments;
+    framebufferInfo.width = engineSwapChain.swapChainExtent.width;
+    framebufferInfo.height = engineSwapChain.swapChainExtent.height;
+    framebufferInfo.layers = 1;
+
+    if (vkCreateFramebuffer(engineDevice.logicalDevice, &framebufferInfo,
+                            nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS) {
+      throw std::runtime_error("failed to create framebuffer!");
+    }
   }
 }
 

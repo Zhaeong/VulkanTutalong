@@ -8,4 +8,5 @@ void FirstApp::run() {
     glfwPollEvents();
   }
 }
+
 } // namespace ve
