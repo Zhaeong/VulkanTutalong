@@ -13,9 +13,12 @@ public:
 
   VkWindow vkWindow{WIDTH, HEIGHT, "First Vulkan"};
 
-  VkPipeline vkPipeline{"../shaders/simple_shader.vert.spv",
-                        "../shaders/simple_shader.frag.spv"};
   VkEngineDevice vkEngineDevice{vkWindow};
+
+  VkEnginePipeline vkEnginePipeline{
+      vkEngineDevice,
+      VkEnginePipeline::defaultPipelineConfigInfo(WIDTH, HEIGHT),
+      "../shaders/simple_shader.vert.spv", "../shaders/simple_shader.frag.spv"};
 
   void run();
 };
