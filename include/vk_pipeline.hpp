@@ -1,16 +1,31 @@
 #pragma once
 
+#include <cassert>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
+
 #include <vulkan/vulkan.h>
 
 #include <vk_device.hpp>
 namespace ve {
-struct PipelineConfigInfo {};
+struct PipelineConfigInfo {
+  VkViewport viewport;
+  VkRect2D scissor;
+  VkPipelineViewportStateCreateInfo viewportStateInfo;
+  VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo;
+  VkPipelineRasterizationStateCreateInfo rasterizationInfo;
+  VkPipelineMultisampleStateCreateInfo multisampleInfo;
+  VkPipelineColorBlendAttachmentState colorBlendAttachment;
+  VkPipelineColorBlendStateCreateInfo colorBlendInfo;
+  VkPipelineDepthStencilStateCreateInfo depthStencilInfo;
+  VkPipelineLayout pipelineLayout = nullptr;
+  VkRenderPass renderPass = nullptr;
+  uint32_t subpass = 0;
+};
 class VkEnginePipeline {
 public:
   VkEngineDevice &engineDevice;
