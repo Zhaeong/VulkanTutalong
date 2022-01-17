@@ -52,6 +52,9 @@ public:
   VkFormat swapChainImageFormat;
   VkExtent2D swapChainExtent;
 
+  // image views
+  std::vector<VkImageView> swapChainImageViews;
+
   VkDebugUtilsMessengerEXT debugMessenger;
 
   VkEngineDevice(VkWindow &window);
@@ -66,6 +69,7 @@ public:
   void pickPhysicalDevice();
   void createLogicalDevice();
   void createSwapChain();
+  void createImageViews();
 
   bool checkValidationLayerSupport();
   std::vector<const char *> getRequiredVkExtensions();
