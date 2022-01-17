@@ -12,11 +12,20 @@
 #include <vector>
 #include <vk_window.hpp>
 
+#include <algorithm> // Necessary for std::clamp
+#include <cstdint>   // Necessary for UINT32_MAX
+
 namespace ve {
 
 struct QueueFamilyIndices {
   std::optional<uint32_t> graphicsFamily;
   std::optional<uint32_t> presentFamily;
+};
+
+struct SwapChainSupportDetails {
+  VkSurfaceCapabilitiesKHR capabilities;
+  std::vector<VkSurfaceFormatKHR> formats;
+  std::vector<VkPresentModeKHR> presentModes;
 };
 
 class VkEngineDevice {
@@ -25,13 +34,23 @@ public:
   VkInstance instance;
 
   VkSurfaceKHR surface;
+
   // actual physical device
   VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
   // logical device
   VkDevice logicalDevice;
 
+  std::vector<const char *> deviceExtensions = {
+      VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+
   VkQueue graphicsQueue;
   VkQueue presentQueue;
+
+  VkSwapchainKHR swapChain;
+  std::vector<VkImage> swapChainImages;
+
+  VkFormat swapChainImageFormat;
+  VkExtent2D swapChainExtent;
 
   VkDebugUtilsMessengerEXT debugMessenger;
 
@@ -46,6 +65,7 @@ public:
   void createInstance();
   void pickPhysicalDevice();
   void createLogicalDevice();
+  void createSwapChain();
 
   bool checkValidationLayerSupport();
   std::vector<const char *> getRequiredVkExtensions();
@@ -76,8 +96,20 @@ public:
 
   bool isDeviceSuitable(VkPhysicalDevice device);
 
+  bool checkDeviceExtensionSupport(VkPhysicalDevice device);
+
   QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 
   void createSurface();
+
+  SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
+
+  VkSurfaceFormatKHR chooseSwapSurfaceFormat(
+      const std::vector<VkSurfaceFormatKHR> &availableFormats);
+
+  VkPresentModeKHR chooseSwapPresentMode(
+      const std::vector<VkPresentModeKHR> &availablePresentModes);
+
+  VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
 };
 } // namespace ve
