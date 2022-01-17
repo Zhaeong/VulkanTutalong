@@ -533,9 +533,9 @@ void VkEngineDevice::createSwapChain() {
     throw std::runtime_error("failed to create swap chain!");
   }
 
-  vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
+  vkGetSwapchainImagesKHR(logicalDevice, swapChain, &imageCount, nullptr);
   swapChainImages.resize(imageCount);
-  vkGetSwapchainImagesKHR(device, swapChain, &imageCount,
+  vkGetSwapchainImagesKHR(logicalDevice, swapChain, &imageCount,
                           swapChainImages.data());
 }
 } // namespace ve
