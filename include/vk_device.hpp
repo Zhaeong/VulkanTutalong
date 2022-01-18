@@ -48,6 +48,8 @@ public:
 
   VkDebugUtilsMessengerEXT debugMessenger;
 
+  VkCommandPool commandPool;
+
   VkEngineDevice(VkWindow &window);
   ~VkEngineDevice();
 
@@ -98,5 +100,7 @@ public:
   SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 
   void createSurface();
+
+  void createCommandPool();
 };
 } // namespace ve

@@ -57,6 +57,8 @@ public:
 
   static PipelineConfigInfo defaultPipelineConfigInfo(uint32_t width,
                                                       uint32_t height);
+
+  void bindCommandBufferToGraphicsPipelilne(VkCommandBuffer commandBuffer);
 };
 
 } // namespace ve

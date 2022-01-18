@@ -328,4 +328,10 @@ VkEnginePipeline::defaultPipelineConfigInfo(uint32_t width, uint32_t height) {
   return configInfo;
 }
 
+void VkEnginePipeline::bindCommandBufferToGraphicsPipelilne(
+    VkCommandBuffer commandBuffer) {
+  vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    graphicsPipeline);
+}
+
 } // namespace ve

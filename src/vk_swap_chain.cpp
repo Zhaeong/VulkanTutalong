@@ -8,6 +8,7 @@ VkEngineSwapChain::VkEngineSwapChain(VkEngineDevice &eDevice)
   createImageViews();
   createRenderPass();
   createFramebuffers();
+  createSemaphores();
 }
 
 VkEngineSwapChain::~VkEngineSwapChain() {
@@ -24,6 +25,12 @@ VkEngineSwapChain::~VkEngineSwapChain() {
   for (auto framebuffer : swapChainFramebuffers) {
     vkDestroyFramebuffer(engineDevice.logicalDevice, framebuffer, nullptr);
   }
+  swapChainImageViews.clear();
+
+  vkDestroySemaphore(engineDevice.logicalDevice, renderFinishedSemaphore,
+                     nullptr);
+  vkDestroySemaphore(engineDevice.logicalDevice, imageAvailableSemaphore,
+                     nullptr);
 }
 
 VkSurfaceFormatKHR VkEngineSwapChain::chooseSwapSurfaceFormat(
@@ -232,12 +239,25 @@ void VkEngineSwapChain::createRenderPass() {
   subpass.colorAttachmentCount = 1;
   subpass.pColorAttachments = &colorAttachmentRef;
 
+  // Create subpass dependency
+  // https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation
+  VkSubpassDependency dependency{};
+  dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+  dependency.dstSubpass = 0;
+  dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+  dependency.srcAccessMask = 0;
+  dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+  dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
   VkRenderPassCreateInfo renderPassInfo{};
   renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
   renderPassInfo.attachmentCount = 1;
   renderPassInfo.pAttachments = &colorAttachment;
   renderPassInfo.subpassCount = 1;
   renderPassInfo.pSubpasses = &subpass;
+
+  renderPassInfo.dependencyCount = 1;
+  renderPassInfo.pDependencies = &dependency;
 
   if (vkCreateRenderPass(engineDevice.logicalDevice, &renderPassInfo, nullptr,
                          &renderPass) != VK_SUCCESS) {
@@ -263,6 +283,19 @@ void VkEngineSwapChain::createFramebuffers() {
                             nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS) {
       throw std::runtime_error("failed to create framebuffer!");
     }
+  }
+}
+
+void VkEngineSwapChain::createSemaphores() {
+  VkSemaphoreCreateInfo semaphoreInfo{};
+  semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+  if (vkCreateSemaphore(engineDevice.logicalDevice, &semaphoreInfo, nullptr,
+                        &imageAvailableSemaphore) != VK_SUCCESS ||
+      vkCreateSemaphore(engineDevice.logicalDevice, &semaphoreInfo, nullptr,
+                        &renderFinishedSemaphore) != VK_SUCCESS) {
+
+    throw std::runtime_error("failed to create semaphores!");
   }
 }
 

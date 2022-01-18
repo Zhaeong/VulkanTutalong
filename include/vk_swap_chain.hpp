@@ -21,7 +21,7 @@ public:
 
   // renderpass
   VkRenderPass renderPass;
-  VkCommandPool commandPool = VK_NULL_HANDLE;
+  VkCommandPool commandPool;
 
   std::vector<VkFramebuffer> swapChainFramebuffers;
 
@@ -46,5 +46,7 @@ public:
       const std::vector<VkPresentModeKHR> &availablePresentModes);
 
   VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
+
+  void createSemaphores();
 };
 } // namespace ve

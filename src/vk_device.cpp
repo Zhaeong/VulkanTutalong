@@ -8,6 +8,7 @@ VkEngineDevice::VkEngineDevice(VkWindow &window) : vkWindow{window} {
   createSurface();
   pickPhysicalDevice();
   createLogicalDevice();
+  createCommandPool();
 }
 VkEngineDevice::~VkEngineDevice() {
   if (enableValidationLayers) {
@@ -15,6 +16,8 @@ VkEngineDevice::~VkEngineDevice() {
     DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
   }
   std::cout << "Cleaning up VkEngineDevice Init\n";
+
+  vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
 
   // have to destroy logical device first it seems
   vkDestroyDevice(logicalDevice, nullptr);
@@ -389,6 +392,18 @@ void VkEngineDevice::createSurface() {
   if (glfwCreateWindowSurface(instance, vkWindow.window, nullptr, &surface) !=
       VK_SUCCESS) {
     throw std::runtime_error("failed to create window surface!");
+  }
+}
+
+void VkEngineDevice::createCommandPool() {
+  QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice);
+  VkCommandPoolCreateInfo poolInfo{};
+  poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+  poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+  poolInfo.flags = 0; // Optional
+  if (vkCreateCommandPool(logicalDevice, &poolInfo, nullptr, &commandPool) !=
+      VK_SUCCESS) {
+    throw std::runtime_error("failed to create command pool!");
   }
 }
 
