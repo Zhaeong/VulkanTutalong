@@ -11,6 +11,8 @@ void FirstApp::run() {
     glfwPollEvents();
     drawFrame();
   }
+
+  vkDeviceWaitIdle(vkEngineDevice.logicalDevice);
 }
 
 void FirstApp::createCommandBuffers() {
@@ -112,6 +114,8 @@ void FirstApp::drawFrame() {
   presentInfo.pResults = nullptr; // Optional
 
   vkQueuePresentKHR(vkEngineDevice.presentQueue, &presentInfo);
+
+  vkQueueWaitIdle(vkEngineDevice.presentQueue);
 }
 
 } // namespace ve
