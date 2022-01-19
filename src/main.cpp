@@ -1,9 +1,4 @@
-#include "first_app.hpp"
-
-#include <cstdlib>
-#include <iostream>
-#include <stdexcept>
-#include <vector>
+#include "main.hpp"
 
 int main() {
   std::cout << "Starting App Tho\n";
