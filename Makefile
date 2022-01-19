@@ -13,7 +13,7 @@
 #  Finds whitespace-separated words in text that match pattern and replaces them with replacement
 #####END REFERENCE#####
 
- CC = g++
+CC = g++
 
 #-ggdb compiles with debug symbols
 #-mwindows compiles without terminal
@@ -49,6 +49,7 @@ LIBS = -LC:\glfw-3.3.6\lib-mingw-w64					\
 
 #Need to put the linkers at the end of the call
 $(BINDIR)/$(EXENAME): $(OBJFILES)
+	@echo cccc
 	$(CC) $(CFLAGS) $(LIBS) $^ -o $@ $(LINKERS)
 
 #Note the -c tells the compiler to create obj files
@@ -64,6 +65,10 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.cpp $(HDRDIR)/%.hpp
 clean:
 	rm -f $(OBJDIR)/*.o
 	rm -f $(BINDIR)/$(EXENAME)
+
+#	For If only using command prompt
+#	del $(OBJDIR)\*.o
+#	del $(BINDIR)\$(EXENAME)
 
 clearScreen:
 	clear

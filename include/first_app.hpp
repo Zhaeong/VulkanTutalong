@@ -23,7 +23,7 @@ public:
   VkEnginePipeline vkEnginePipeline{
       vkEngineDevice, vkEngineSwapChain,
       VkEnginePipeline::defaultPipelineConfigInfo(WIDTH, HEIGHT),
-      "../shaders/simple_shader.vert.spv", "../shaders/simple_shader.frag.spv"};
+      "shaders/simple_shader.vert.spv", "shaders/simple_shader.frag.spv"};
 
   std::vector<VkCommandBuffer> commandBuffers;
 

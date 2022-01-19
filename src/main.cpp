@@ -3,8 +3,10 @@
 #include <cstdlib>
 #include <iostream>
 #include <stdexcept>
+#include <vector>
+
 int main() {
-  std::cout << "starting it\n";
+  std::cout << "Starting App Tho\n";
   ve::FirstApp app;
 
   try {

@@ -8,7 +8,7 @@
 namespace ve {
 class VkEngineSwapChain {
 public:
-  VkEngineDevice engineDevice;
+  VkEngineDevice &engineDevice;
 
   VkSwapchainKHR swapChain;
   std::vector<VkImage> swapChainImages;

@@ -11,11 +11,12 @@ VkEngineDevice::VkEngineDevice(VkWindow &window) : vkWindow{window} {
   createCommandPool();
 }
 VkEngineDevice::~VkEngineDevice() {
+
+  std::cout << "Cleaning up VkEngineDevice Init\n";
   if (enableValidationLayers) {
     // Can remove this line to trigger validation layer error
     DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
   }
-  std::cout << "Cleaning up VkEngineDevice Init\n";
 
   vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
 

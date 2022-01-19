@@ -13,6 +13,8 @@ VkWindow::VkWindow(int w, int h, std::string name) {
 }
 
 VkWindow::~VkWindow() {
+
+  std::cout << "Cleaning up vkWindow Init\n";
   glfwDestroyWindow(window);
   glfwTerminate();
 }
