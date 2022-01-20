@@ -53,6 +53,10 @@ public:
   VkEngineDevice(VkWindow &window);
   ~VkEngineDevice();
 
+  // deleting copy constructors
+  VkEngineDevice(const VkEngineDevice &) = delete;
+  void operator=(const VkEngineDevice &) = delete;
+
   const std::vector<const char *> validationLayers = {
       "VK_LAYER_KHRONOS_validation"};
 

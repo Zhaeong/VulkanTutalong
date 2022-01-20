@@ -221,6 +221,12 @@ void VkEngineDevice::pickPhysicalDevice() {
 
   if (physicalDevice == VK_NULL_HANDLE) {
     throw std::runtime_error("Failed to find Physical Device");
+  } else {
+
+    VkPhysicalDeviceProperties deviceProperties;
+    vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
+    std::cout << "Picked " << deviceProperties.deviceName << " Vendor"
+              << deviceProperties.vendorID << "\n";
   }
 }
 
@@ -273,6 +279,8 @@ bool VkEngineDevice::checkDeviceExtensionSupport(VkPhysicalDevice device) {
 QueueFamilyIndices VkEngineDevice::findQueueFamilies(VkPhysicalDevice device) {
   QueueFamilyIndices indices;
 
+  // Queues are what you submit command buffers to, and a queue family describes
+  // a set of queues that do a certain thing e.g. graphics for draw calls
   uint32_t queueFamilyCount = 0;
   vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
 
@@ -284,12 +292,14 @@ QueueFamilyIndices VkEngineDevice::findQueueFamilies(VkPhysicalDevice device) {
   for (int i = 0; i < queueFamilies.size(); i++) {
     if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
       indices.graphicsFamily = i;
-      std::cout << "Graphics Index: " << i << " Queuecount"
+      std::cout << "Graphics Queue Index: " << i << " Can create queuecount"
                 << queueFamilies[i].queueCount << "\n";
     }
     // Find if the device supports window system and present images to the
     // surface we created
     VkBool32 presentSupport = false;
+    // To determine whether a queue family of a physical device supports
+    // presentation to a given surface
     vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
     if (presentSupport) {
       indices.presentFamily = i;
@@ -311,6 +321,7 @@ void VkEngineDevice::createLogicalDevice() {
   std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(),
                                             indices.presentFamily.value()};
 
+  // create device queue
   // Assigns priorty to queues to influence scheduling of comand buffer
   // execution
   float queuePriority = 1.0f;

@@ -98,6 +98,8 @@ void VkEngineSwapChain::createSwapChain() {
       chooseSwapPresentMode(swapChainSupport.presentModes);
 
   VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
+  std::cout << "SwapChain extent h: " << extent.height << " w:" << extent.width
+            << "\n";
 
   swapChainImageFormat = surfaceFormat.format;
   swapChainExtent = extent;
