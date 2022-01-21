@@ -14,6 +14,8 @@ public:
   static const int WIDTH = 800;
   static const int HEIGHT = 600;
 
+  int currentFrame = 0;
+
   VkWindow vkWindow{WIDTH, HEIGHT, "First Vulkan"};
 
   VkEngineDevice vkEngineDevice{vkWindow};

@@ -8,7 +8,7 @@ VkEngineSwapChain::VkEngineSwapChain(VkEngineDevice &eDevice)
   createImageViews();
   createRenderPass();
   createFramebuffers();
-  createSemaphores();
+  createSyncObjects();
 }
 
 VkEngineSwapChain::~VkEngineSwapChain() {
@@ -27,10 +27,16 @@ VkEngineSwapChain::~VkEngineSwapChain() {
   }
   swapChainImageViews.clear();
 
-  vkDestroySemaphore(engineDevice.logicalDevice, renderFinishedSemaphore,
-                     nullptr);
-  vkDestroySemaphore(engineDevice.logicalDevice, imageAvailableSemaphore,
-                     nullptr);
+  for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    vkDestroySemaphore(engineDevice.logicalDevice, renderFinishedSemaphore[i],
+                       nullptr);
+    vkDestroySemaphore(engineDevice.logicalDevice, imageAvailableSemaphore[i],
+                       nullptr);
+    vkDestroyFence(engineDevice.logicalDevice, inFlightFences[i], nullptr);
+  }
+
+  // No need to vkDestoryFence on imagesInFlight since they are pointers to
+  // inFlightFences
 }
 
 VkSurfaceFormatKHR VkEngineSwapChain::chooseSwapSurfaceFormat(
@@ -288,16 +294,35 @@ void VkEngineSwapChain::createFramebuffers() {
   }
 }
 
-void VkEngineSwapChain::createSemaphores() {
+void VkEngineSwapChain::createSyncObjects() {
   VkSemaphoreCreateInfo semaphoreInfo{};
   semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-  if (vkCreateSemaphore(engineDevice.logicalDevice, &semaphoreInfo, nullptr,
-                        &imageAvailableSemaphore) != VK_SUCCESS ||
-      vkCreateSemaphore(engineDevice.logicalDevice, &semaphoreInfo, nullptr,
-                        &renderFinishedSemaphore) != VK_SUCCESS) {
+  VkFenceCreateInfo fenceInfo{};
+  fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+  // fences are default created in unsignalled state so need to create it to be
+  // signalled for else in render loop it'll wait forever for signalled fence
+  fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    throw std::runtime_error("failed to create semaphores!");
+  imageAvailableSemaphore.resize(MAX_FRAMES_IN_FLIGHT);
+  renderFinishedSemaphore.resize(MAX_FRAMES_IN_FLIGHT);
+  inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+
+  // initially not a single frame is using a swap chain image so we don't have a
+  // fence
+  imagesInFlight.resize(swapChainImages.size(), VK_NULL_HANDLE);
+
+  for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+
+    if (vkCreateSemaphore(engineDevice.logicalDevice, &semaphoreInfo, nullptr,
+                          &imageAvailableSemaphore[i]) != VK_SUCCESS ||
+        vkCreateSemaphore(engineDevice.logicalDevice, &semaphoreInfo, nullptr,
+                          &renderFinishedSemaphore[i]) != VK_SUCCESS ||
+        vkCreateFence(engineDevice.logicalDevice, &fenceInfo, nullptr,
+                      &inFlightFences[i]) != VK_SUCCESS) {
+
+      throw std::runtime_error("failed to create sync objects!");
+    }
   }
 }
 

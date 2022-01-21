@@ -27,8 +27,13 @@ public:
 
   std::vector<VkCommandBuffer> commandBuffers;
 
-  VkSemaphore imageAvailableSemaphore;
-  VkSemaphore renderFinishedSemaphore;
+  const int MAX_FRAMES_IN_FLIGHT = 2;
+  std::vector<VkSemaphore> imageAvailableSemaphore;
+  std::vector<VkSemaphore> renderFinishedSemaphore;
+  std::vector<VkFence> inFlightFences;
+
+  // For each image in the swap chain
+  std::vector<VkFence> imagesInFlight;
 
   VkEngineSwapChain(VkEngineDevice &eDevice);
   ~VkEngineSwapChain();
@@ -47,6 +52,6 @@ public:
 
   VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
 
-  void createSemaphores();
+  void createSyncObjects();
 };
 } // namespace ve
