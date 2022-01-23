@@ -25,8 +25,6 @@ public:
 
   std::vector<VkFramebuffer> swapChainFramebuffers;
 
-  std::vector<VkCommandBuffer> commandBuffers;
-
   const int MAX_FRAMES_IN_FLIGHT = 2;
   std::vector<VkSemaphore> imageAvailableSemaphore;
   std::vector<VkSemaphore> renderFinishedSemaphore;

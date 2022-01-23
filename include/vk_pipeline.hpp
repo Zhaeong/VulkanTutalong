@@ -37,21 +37,25 @@ public:
 
   VkPipelineLayout pipelineLayout = nullptr;
 
+  std::string vertexCodeFilePath;
+  std::string fragmentCodeFilePath;
+
   // deleting copy constructors
   VkEnginePipeline(const VkEnginePipeline &) = delete;
   void operator=(const VkEnginePipeline &) = delete;
 
   VkEnginePipeline(VkEngineDevice &eDevice, VkEngineSwapChain &eSwapChain,
                    const PipelineConfigInfo &pipelineConfig,
-                   const std::string &vertFilepath,
-                   const std::string &fragFilepath);
+                   std::string vertFilepath, std::string fragFilepath);
   ~VkEnginePipeline();
 
-  static std::vector<char> readFile(const std::string &filePath);
+  static std::vector<char> readFile(std::string filePath);
 
-  void createGraphicsPipeline(const std::string &vertFilepath,
-                              const std::string &fragFilepath,
-                              const PipelineConfigInfo &pipelineConfig);
+  // for window resizes
+  void recreateSwapChain();
+  void cleanupSwapChain();
+
+  void createGraphicsPipeline(const PipelineConfigInfo &pipelineConfig);
 
   VkShaderModule createShaderModule(const std::vector<char> &shaderCode);
 

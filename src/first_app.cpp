@@ -2,7 +2,13 @@
 
 namespace ve {
 
-FirstApp::FirstApp() { createCommandBuffers(); }
+FirstApp::FirstApp() {
+  glfwSetWindowUserPointer(vkEngineDevice.vkWindow.window, this);
+  glfwSetFramebufferSizeCallback(vkEngineDevice.vkWindow.window,
+                                 framebufferResizeCallback);
+
+  createCommandBuffers();
+}
 FirstApp::~FirstApp() {}
 void FirstApp::run() {
   std::cout << "In Run\n";
@@ -81,10 +87,17 @@ void FirstApp::drawFrame() {
 
   // First get the next free image on the swapchain that is not being rendered
   // to The semaphore will let us know
-  vkAcquireNextImageKHR(vkEngineDevice.logicalDevice,
-                        vkEngineSwapChain.swapChain, UINT64_MAX,
-                        vkEngineSwapChain.imageAvailableSemaphore[currentFrame],
-                        VK_NULL_HANDLE, &imageIndex);
+  VkResult result = vkAcquireNextImageKHR(
+      vkEngineDevice.logicalDevice, vkEngineSwapChain.swapChain, UINT64_MAX,
+      vkEngineSwapChain.imageAvailableSemaphore[currentFrame], VK_NULL_HANDLE,
+      &imageIndex);
+
+  if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+    vkEnginePipeline.recreateSwapChain();
+    return;
+  } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+    throw std::runtime_error("Failed to acquire swapchain image");
+  }
 
   // If a fence for this swap chain image has been created already, we have to
   // wait for it before rendering to it in case it's currently being rendered
@@ -167,13 +180,27 @@ void FirstApp::drawFrame() {
   presentInfo.pResults = nullptr; // Optional
 
   // submits request to present and image to the swap chain
-  vkQueuePresentKHR(vkEngineDevice.presentQueue, &presentInfo);
+  result = vkQueuePresentKHR(vkEngineDevice.presentQueue, &presentInfo);
+  if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
+      frameBufferResized) {
+    frameBufferResized = false;
+    vkEnginePipeline.recreateSwapChain();
+  } else if (result != VK_SUCCESS) {
+    throw std::runtime_error("failed to present swap chain image");
+  }
 
   // this waits for the present queue to be idle before submitting to it again
   vkQueueWaitIdle(vkEngineDevice.presentQueue);
 
   // update the current frame so it goes to the next one
   currentFrame = (currentFrame + 1) % vkEngineSwapChain.MAX_FRAMES_IN_FLIGHT;
+}
+
+void FirstApp::framebufferResizeCallback(GLFWwindow *window, int width,
+                                         int height) {
+  std::cout << "GLFW resize callback\n";
+  auto app = reinterpret_cast<FirstApp *>(glfwGetWindowUserPointer(window));
+  app->frameBufferResized = true;
 }
 
 } // namespace ve

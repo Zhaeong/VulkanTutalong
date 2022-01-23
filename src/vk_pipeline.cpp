@@ -5,10 +5,12 @@ namespace ve {
 VkEnginePipeline::VkEnginePipeline(VkEngineDevice &eDevice,
                                    VkEngineSwapChain &eSwapChain,
                                    const PipelineConfigInfo &pipelineConfig,
-                                   const std::string &vertFilepath,
-                                   const std::string &fragFilepath)
+                                   std::string vertFilepath,
+                                   std::string fragFilepath)
     : engineDevice{eDevice}, engineSwapChain{eSwapChain} {
-  createGraphicsPipeline(vertFilepath, fragFilepath, pipelineConfig);
+  vertexCodeFilePath = vertFilepath;
+  fragmentCodeFilePath = fragFilepath;
+  createGraphicsPipeline(pipelineConfig);
 }
 
 VkEnginePipeline::~VkEnginePipeline() {
@@ -20,7 +22,7 @@ VkEnginePipeline::~VkEnginePipeline() {
   vkDestroyPipelineLayout(engineDevice.logicalDevice, pipelineLayout, nullptr);
 }
 
-std::vector<char> VkEnginePipeline::readFile(const std::string &filePath) {
+std::vector<char> VkEnginePipeline::readFile(std::string filePath) {
 
   // std::ios::ate means seek the end immediatly
   // std::ios::binary read it in as a binary
@@ -44,7 +46,6 @@ std::vector<char> VkEnginePipeline::readFile(const std::string &filePath) {
 }
 
 void VkEnginePipeline::createGraphicsPipeline(
-    const std::string &vertFilepath, const std::string &fragFilepath,
     const PipelineConfigInfo &pipelineConfig) {
 
   /*
@@ -53,8 +54,9 @@ void VkEnginePipeline::createGraphicsPipeline(
     assert(pipelineConfig.renderPass != VK_NULL_HANDLE &&
            "Cannot create graphics pipeline: no renderpass in config");
            */
-  auto vertCode = readFile(vertFilepath);
-  auto fragCode = readFile(fragFilepath);
+
+  auto vertCode = readFile(vertexCodeFilePath);
+  auto fragCode = readFile(fragmentCodeFilePath);
 
   std::cout << "Vertext shader Code Size:" << vertCode.size() << "\n";
   std::cout << "Fragment shader Code Size:" << fragCode.size() << "\n";
@@ -317,6 +319,43 @@ void VkEnginePipeline::bindCommandBufferToGraphicsPipelilne(
     VkCommandBuffer commandBuffer) {
   vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                     graphicsPipeline);
+}
+
+void VkEnginePipeline::recreateSwapChain() {
+  // Shouldn't touch resource while still in use
+  vkDeviceWaitIdle(engineDevice.logicalDevice);
+
+  cleanupSwapChain();
+  engineSwapChain.createSwapChain();
+  engineSwapChain.createImageViews();
+  engineSwapChain.createRenderPass();
+  createGraphicsPipeline(VkEnginePipeline::defaultPipelineConfigInfo(
+      engineDevice.vkWindow.width, engineDevice.vkWindow.height));
+  engineSwapChain.createFramebuffers();
+}
+
+void VkEnginePipeline::cleanupSwapChain() {
+  for (int i = 0; i < engineSwapChain.swapChainFramebuffers.size(); i++) {
+    vkDestroyFramebuffer(engineDevice.logicalDevice,
+                         engineSwapChain.swapChainFramebuffers[i], nullptr);
+  }
+
+  vkFreeCommandBuffers(
+      engineDevice.logicalDevice, engineSwapChain.commandPool,
+      static_cast<uint32_t>(engineSwapChain.commandBuffers.size()),
+      engineSwapChain.commandBuffers.data());
+
+  vkDestroyPipeline(engineDevice.logicalDevice, graphicsPipeline, nullptr);
+  vkDestroyPipelineLayout(engineDevice.logicalDevice, pipelineLayout, nullptr);
+  vkDestroyRenderPass(engineDevice.logicalDevice, engineSwapChain.renderPass,
+                      nullptr);
+  for (int i = 0; i < engineSwapChain.swapChainImageViews.size(); i++) {
+    vkDestroyImageView(engineDevice.logicalDevice,
+                       engineSwapChain.swapChainImageViews[i], nullptr);
+  }
+
+  vkDestroySwapchainKHR(engineDevice.logicalDevice, engineSwapChain.swapChain,
+                        nullptr);
 }
 
 } // namespace ve

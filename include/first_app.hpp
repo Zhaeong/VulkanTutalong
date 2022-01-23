@@ -29,6 +29,8 @@ public:
 
   std::vector<VkCommandBuffer> commandBuffers;
 
+  bool frameBufferResized = false;
+
   FirstApp();
   ~FirstApp();
 
@@ -41,5 +43,8 @@ public:
   void createCommandBuffers();
 
   void drawFrame();
+
+  static void framebufferResizeCallback(GLFWwindow *window, int width,
+                                        int height);
 };
 } // namespace ve
