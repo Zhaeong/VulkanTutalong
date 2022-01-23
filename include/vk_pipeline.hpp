@@ -40,6 +40,8 @@ public:
   std::string vertexCodeFilePath;
   std::string fragmentCodeFilePath;
 
+  std::vector<VkCommandBuffer> commandBuffers;
+
   // deleting copy constructors
   VkEnginePipeline(const VkEnginePipeline &) = delete;
   void operator=(const VkEnginePipeline &) = delete;
@@ -51,6 +53,7 @@ public:
 
   static std::vector<char> readFile(std::string filePath);
 
+  void createCommandBuffers();
   // for window resizes
   void recreateSwapChain();
   void cleanupSwapChain();

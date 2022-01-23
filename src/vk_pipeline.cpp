@@ -11,6 +11,8 @@ VkEnginePipeline::VkEnginePipeline(VkEngineDevice &eDevice,
   vertexCodeFilePath = vertFilepath;
   fragmentCodeFilePath = fragFilepath;
   createGraphicsPipeline(pipelineConfig);
+
+  createCommandBuffers();
 }
 
 VkEnginePipeline::~VkEnginePipeline() {
@@ -315,6 +317,60 @@ VkEnginePipeline::defaultPipelineConfigInfo(uint32_t width, uint32_t height) {
   return configInfo;
 }
 
+void VkEnginePipeline::createCommandBuffers() {
+  commandBuffers.resize(engineSwapChain.swapChainFramebuffers.size());
+
+  VkCommandBufferAllocateInfo allocInfo{};
+
+  allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+  allocInfo.commandPool = engineDevice.commandPool;
+  allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+  allocInfo.commandBufferCount = (uint32_t)commandBuffers.size();
+
+  if (vkAllocateCommandBuffers(engineDevice.logicalDevice, &allocInfo,
+                               commandBuffers.data()) != VK_SUCCESS) {
+    throw std::runtime_error("failed to allocate command buffers!");
+  }
+
+  for (size_t i = 0; i < commandBuffers.size(); i++) {
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = 0;                  // Optional
+    beginInfo.pInheritanceInfo = nullptr; // Optional
+
+    if (vkBeginCommandBuffer(commandBuffers[i], &beginInfo) != VK_SUCCESS) {
+      throw std::runtime_error("failed to begin recording command buffer!");
+    }
+    // Begin render pass
+    VkRenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = engineSwapChain.renderPass;
+    renderPassInfo.framebuffer = engineSwapChain.swapChainFramebuffers[i];
+
+    renderPassInfo.renderArea.offset = {0, 0};
+    // make sure to use swapchainextent and not window extent due to high
+    // density displays
+    renderPassInfo.renderArea.extent = engineSwapChain.swapChainExtent;
+
+    VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+    renderPassInfo.clearValueCount = 1;
+    renderPassInfo.pClearValues = &clearColor;
+
+    vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo,
+                         VK_SUBPASS_CONTENTS_INLINE);
+
+    bindCommandBufferToGraphicsPipelilne(commandBuffers[i]);
+
+    vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
+
+    vkCmdEndRenderPass(commandBuffers[i]);
+
+    if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
+      throw std::runtime_error("failed to record command buffer!");
+    }
+  }
+}
+
 void VkEnginePipeline::bindCommandBufferToGraphicsPipelilne(
     VkCommandBuffer commandBuffer) {
   vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -323,15 +379,24 @@ void VkEnginePipeline::bindCommandBufferToGraphicsPipelilne(
 
 void VkEnginePipeline::recreateSwapChain() {
   // Shouldn't touch resource while still in use
+
+  int width = 0;
+  int height = 0;
+  glfwGetFramebufferSize(engineDevice.vkWindow.window, &width, &height);
+  while (height == 0 || width == 0) {
+    glfwGetFramebufferSize(engineDevice.vkWindow.window, &width, &height);
+    glfwWaitEvents();
+  }
   vkDeviceWaitIdle(engineDevice.logicalDevice);
 
   cleanupSwapChain();
   engineSwapChain.createSwapChain();
   engineSwapChain.createImageViews();
   engineSwapChain.createRenderPass();
-  createGraphicsPipeline(VkEnginePipeline::defaultPipelineConfigInfo(
-      engineDevice.vkWindow.width, engineDevice.vkWindow.height));
+  createGraphicsPipeline(
+      VkEnginePipeline::defaultPipelineConfigInfo(width, height));
   engineSwapChain.createFramebuffers();
+  createCommandBuffers();
 }
 
 void VkEnginePipeline::cleanupSwapChain() {
@@ -340,11 +405,12 @@ void VkEnginePipeline::cleanupSwapChain() {
                          engineSwapChain.swapChainFramebuffers[i], nullptr);
   }
 
-  vkFreeCommandBuffers(
-      engineDevice.logicalDevice, engineSwapChain.commandPool,
-      static_cast<uint32_t>(engineSwapChain.commandBuffers.size()),
-      engineSwapChain.commandBuffers.data());
+  vkFreeCommandBuffers(engineDevice.logicalDevice, engineDevice.commandPool,
+                       static_cast<uint32_t>(commandBuffers.size()),
+                       commandBuffers.data());
 
+  vkDestroyShaderModule(engineDevice.logicalDevice, fragShaderModule, nullptr);
+  vkDestroyShaderModule(engineDevice.logicalDevice, vertShaderModule, nullptr);
   vkDestroyPipeline(engineDevice.logicalDevice, graphicsPipeline, nullptr);
   vkDestroyPipelineLayout(engineDevice.logicalDevice, pipelineLayout, nullptr);
   vkDestroyRenderPass(engineDevice.logicalDevice, engineSwapChain.renderPass,

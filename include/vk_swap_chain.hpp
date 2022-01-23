@@ -21,7 +21,6 @@ public:
 
   // renderpass
   VkRenderPass renderPass;
-  VkCommandPool commandPool;
 
   std::vector<VkFramebuffer> swapChainFramebuffers;
 
