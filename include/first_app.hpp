@@ -27,8 +27,6 @@ public:
       VkEnginePipeline::defaultPipelineConfigInfo(WIDTH, HEIGHT),
       "shaders/simple_shader.vert.spv", "shaders/simple_shader.frag.spv"};
 
-  std::vector<VkCommandBuffer> commandBuffers;
-
   bool frameBufferResized = false;
 
   FirstApp();
@@ -39,8 +37,6 @@ public:
   void operator=(const FirstApp &) = delete;
 
   void run();
-
-  void createCommandBuffers();
 
   void drawFrame();
 
