@@ -40,7 +40,8 @@ void VkEngineDevice::createInstance() {
   appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
   appInfo.pEngineName = "No Engine";
   appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-  appInfo.apiVersion = VK_API_VERSION_1_0;
+  // appInfo.apiVersion = VK_API_VERSION_1_0;
+  appInfo.apiVersion = VK_API_VERSION_1_2;
 
   VkInstanceCreateInfo createInfo{};
   createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -266,7 +267,8 @@ bool VkEngineDevice::checkDeviceExtensionSupport(VkPhysicalDevice device) {
                                            deviceExtensions.end());
 
   for (int i = 0; i < availableExtensions.size(); i++) {
-    // std::cout << "Avail: " << availableExtensions[i].extensionName << "\n";
+    std::cout << "Avail: " << availableExtensions[i].extensionName
+              << " Version: " << availableExtensions[i].specVersion << "\n";
     requiredExtensions.erase(availableExtensions[i].extensionName);
   }
   if (requiredExtensions.empty()) {
@@ -359,6 +361,10 @@ void VkEngineDevice::createLogicalDevice() {
   } else {
     createInfo.enabledLayerCount = 0;
   }
+  // Query vk12 features
+  VkPhysicalDeviceVulkan12Features vk12Features{};
+  vk12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+  createInfo.pNext = &vk12Features;
 
   if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &logicalDevice) !=
       VK_SUCCESS) {

@@ -6,6 +6,7 @@
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/include",
                 "C:\\VulkanSDK\\1.2.198.1\\Include",
+                "C:\\VulkanSDK\\1.2.198.1\\Third-Party\\Include",
                 "C:\\glfw-3.3.6\\include"
             ],
             "defines": [

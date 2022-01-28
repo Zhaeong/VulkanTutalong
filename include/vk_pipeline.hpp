@@ -10,6 +10,7 @@
 #include <vulkan/vulkan.h>
 
 #include <vk_device.hpp>
+#include <vk_model.hpp>
 #include <vk_swap_chain.hpp>
 namespace ve {
 struct PipelineConfigInfo {

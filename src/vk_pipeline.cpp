@@ -91,13 +91,21 @@ void VkEnginePipeline::createGraphicsPipeline(
 
   // hardcoding vertext data in shader so fill struct to specify no vertex data
   // for now
+
+  auto bindingDescriptions = Vertex::getBindingDescription();
+  auto attributeDescriptions = Vertex::getAttributeDescriptions();
+
   VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
   vertexInputInfo.sType =
       VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-  vertexInputInfo.vertexBindingDescriptionCount = 0;
-  vertexInputInfo.pVertexBindingDescriptions = nullptr; // Optional
-  vertexInputInfo.vertexAttributeDescriptionCount = 0;
-  vertexInputInfo.pVertexAttributeDescriptions = nullptr; // Optional
+  vertexInputInfo.vertexBindingDescriptionCount =
+      static_cast<uint32_t>(bindingDescriptions.size());
+  vertexInputInfo.pVertexBindingDescriptions =
+      bindingDescriptions.data(); // Optional
+  vertexInputInfo.vertexAttributeDescriptionCount =
+      static_cast<uint32_t>(attributeDescriptions.size());
+  vertexInputInfo.pVertexAttributeDescriptions =
+      attributeDescriptions.data(); // Optional
 
   //***************************************************
   // Viewport info
@@ -347,6 +355,7 @@ void VkEnginePipeline::createCommandBuffers() {
     renderPassInfo.renderPass = engineSwapChain.renderPass;
     renderPassInfo.framebuffer = engineSwapChain.swapChainFramebuffers[i];
 
+    // where shader draws
     renderPassInfo.renderArea.offset = {0, 0};
     // make sure to use swapchainextent and not window extent due to high
     // density displays
@@ -356,6 +365,7 @@ void VkEnginePipeline::createCommandBuffers() {
     renderPassInfo.clearValueCount = 1;
     renderPassInfo.pClearValues = &clearColor;
 
+    // inline so that render pass isn't calling secondary command buffers
     vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo,
                          VK_SUBPASS_CONTENTS_INLINE);
 

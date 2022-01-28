@@ -42,7 +42,7 @@ EXENAME = VulkanTry
 INCLUDES = -Iinclude                                                     \
 		   -IC:\glfw-3.3.6\include										 \
 		   -IC:\VulkanSDK\1.2.198.1\Include								 \
-		   -IC:\VulkanSDK\1.2.198.1\Third-Party\Include\glm				 \
+		   -IC:\VulkanSDK\1.2.198.1\Third-Party\Include
 
 LIBS = -LC:\glfw-3.3.6\lib-mingw-w64					\
 	   -LC:\VulkanSDK\1.2.198.1\Lib						\
