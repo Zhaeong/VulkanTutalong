@@ -1,3 +1,4 @@
+#include "vk_device.hpp"
 #include <glm/glm.hpp>
 #include <vector>
 #include <vulkan/vulkan.h>
@@ -33,8 +34,20 @@ struct Vertex {
 };
 class VkModel {
 public:
-  VkModel(/* args */);
+  VkEngineDevice &engineDevice;
+
+  VkBuffer vertexBuffer;
+  VkDeviceMemory vertexBufferMemory;
+
+  std::vector<Vertex> vertices;
+
+  VkModel(VkEngineDevice &eDevice);
   ~VkModel();
+
+  void createVertexBuffer(std::vector<Vertex> vertices);
+
+  uint32_t findMemoryType(uint32_t typeFilter,
+                          VkMemoryPropertyFlags properties);
 };
 
 } // namespace ve

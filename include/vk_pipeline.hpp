@@ -31,6 +31,7 @@ class VkEnginePipeline {
 public:
   VkEngineDevice &engineDevice;
   VkEngineSwapChain &engineSwapChain;
+  VkModel &engineInputModel;
 
   VkPipeline graphicsPipeline;
   VkShaderModule vertShaderModule;
@@ -49,7 +50,8 @@ public:
 
   VkEnginePipeline(VkEngineDevice &eDevice, VkEngineSwapChain &eSwapChain,
                    const PipelineConfigInfo &pipelineConfig,
-                   std::string vertFilepath, std::string fragFilepath);
+                   std::string vertFilepath, std::string fragFilepath,
+                   VkModel &inputModel);
   ~VkEnginePipeline();
 
   static std::vector<char> readFile(std::string filePath);

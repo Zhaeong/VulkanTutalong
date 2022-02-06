@@ -6,8 +6,10 @@ VkEnginePipeline::VkEnginePipeline(VkEngineDevice &eDevice,
                                    VkEngineSwapChain &eSwapChain,
                                    const PipelineConfigInfo &pipelineConfig,
                                    std::string vertFilepath,
-                                   std::string fragFilepath)
-    : engineDevice{eDevice}, engineSwapChain{eSwapChain} {
+                                   std::string fragFilepath,
+                                   VkModel &inputModel)
+    : engineDevice{eDevice}, engineSwapChain{eSwapChain}, engineInputModel{
+                                                              inputModel} {
   vertexCodeFilePath = vertFilepath;
   fragmentCodeFilePath = fragFilepath;
   createGraphicsPipeline(pipelineConfig);
@@ -371,7 +373,12 @@ void VkEnginePipeline::createCommandBuffers() {
 
     bindCommandBufferToGraphicsPipelilne(commandBuffers[i]);
 
-    vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
+    VkBuffer vertexBuffers[] = {engineInputModel.vertexBuffer};
+    VkDeviceSize offsets[] = {0};
+    vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+
+    vkCmdDraw(commandBuffers[i],
+              static_cast<uint32_t>(engineInputModel.vertices.size()), 1, 0, 0);
 
     vkCmdEndRenderPass(commandBuffers[i]);
 

@@ -22,10 +22,15 @@ public:
 
   VkEngineSwapChain vkEngineSwapChain{vkEngineDevice};
 
+  VkModel vkModel{vkEngineDevice};
+
   VkEnginePipeline vkEnginePipeline{
-      vkEngineDevice, vkEngineSwapChain,
+      vkEngineDevice,
+      vkEngineSwapChain,
       VkEnginePipeline::defaultPipelineConfigInfo(WIDTH, HEIGHT),
-      "shaders/simple_shader.vert.spv", "shaders/simple_shader.frag.spv"};
+      "shaders/simple_shader.vert.spv",
+      "shaders/simple_shader.frag.spv",
+      vkModel};
 
   bool frameBufferResized = false;
 
