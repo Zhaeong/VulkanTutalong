@@ -14,11 +14,13 @@ VkModel::~VkModel() {
   vkFreeMemory(engineDevice.logicalDevice, vertexBufferMemory, nullptr);
 }
 
-void VkModel::createVertexBuffer(std::vector<Vertex> vertices) {
+void VkModel::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
+                           VkMemoryPropertyFlags properties, VkBuffer &buffer,
+                           VkDeviceMemory &bufferMemory) {
   VkBufferCreateInfo bufferInfo{};
   bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-  bufferInfo.size = sizeof(vertices[0]) * vertices.size();
-  bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+  bufferInfo.size = size;
+  bufferInfo.usage = usage;
   bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
   if (vkCreateBuffer(engineDevice.logicalDevice, &bufferInfo, nullptr,
@@ -36,9 +38,8 @@ void VkModel::createVertexBuffer(std::vector<Vertex> vertices) {
   VkMemoryAllocateInfo allocInfo{};
   allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
   allocInfo.allocationSize = memRequirements.size;
-  allocInfo.memoryTypeIndex = findMemoryType(
-      memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                                          VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+  allocInfo.memoryTypeIndex =
+      findMemoryType(memRequirements.memoryTypeBits, properties);
 
   if (vkAllocateMemory(engineDevice.logicalDevice, &allocInfo, nullptr,
                        &vertexBufferMemory) != VK_SUCCESS) {
@@ -46,13 +47,19 @@ void VkModel::createVertexBuffer(std::vector<Vertex> vertices) {
   }
   vkBindBufferMemory(engineDevice.logicalDevice, vertexBuffer,
                      vertexBufferMemory, 0);
+}
+void VkModel::createVertexBuffer(std::vector<Vertex> vertices) {
 
-  // Now fill in the vertex buffer with vertex data
+  VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+  createBuffer(bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                   VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+               vertexBuffer, vertexBufferMemory);
 
   void *data;
-  vkMapMemory(engineDevice.logicalDevice, vertexBufferMemory, 0,
-              bufferInfo.size, 0, &data);
-  memcpy(data, vertices.data(), (size_t)bufferInfo.size);
+  vkMapMemory(engineDevice.logicalDevice, vertexBufferMemory, 0, bufferSize, 0,
+              &data);
+  memcpy(data, vertices.data(), (size_t)bufferSize);
   vkUnmapMemory(engineDevice.logicalDevice, vertexBufferMemory);
 }
 
