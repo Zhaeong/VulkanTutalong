@@ -24,7 +24,7 @@ void VkModel::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
   bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
   if (vkCreateBuffer(engineDevice.logicalDevice, &bufferInfo, nullptr,
-                     &vertexBuffer) != VK_SUCCESS) {
+                     &buffer) != VK_SUCCESS) {
     throw std::runtime_error("failed to create vertex buffer!");
   }
 
@@ -32,7 +32,7 @@ void VkModel::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
   // First step of allocating memory to buffer requires querying its memory
   // requirements
   VkMemoryRequirements memRequirements;
-  vkGetBufferMemoryRequirements(engineDevice.logicalDevice, vertexBuffer,
+  vkGetBufferMemoryRequirements(engineDevice.logicalDevice, buffer,
                                 &memRequirements);
 
   VkMemoryAllocateInfo allocInfo{};
@@ -42,25 +42,81 @@ void VkModel::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
       findMemoryType(memRequirements.memoryTypeBits, properties);
 
   if (vkAllocateMemory(engineDevice.logicalDevice, &allocInfo, nullptr,
-                       &vertexBufferMemory) != VK_SUCCESS) {
+                       &bufferMemory) != VK_SUCCESS) {
     throw std::runtime_error("failed to allocate vertex buffer memory!");
   }
-  vkBindBufferMemory(engineDevice.logicalDevice, vertexBuffer,
-                     vertexBufferMemory, 0);
+  vkBindBufferMemory(engineDevice.logicalDevice, buffer, bufferMemory, 0);
 }
+
+void VkModel::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer,
+                         VkDeviceSize size) {
+
+  // First need to allocate a temporary command buffer
+  //  Can create seperate command pool, but maybe at another time
+  VkCommandBufferAllocateInfo allocInfo{};
+  allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+  allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+  allocInfo.commandPool = engineDevice.commandPool;
+  allocInfo.commandBufferCount = 1;
+
+  VkCommandBuffer commandBuffer;
+  vkAllocateCommandBuffers(engineDevice.logicalDevice, &allocInfo,
+                           &commandBuffer);
+
+  // Begin recording to command buffer
+  VkCommandBufferBeginInfo beginInfo{};
+  beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+  // telling driver about our onetime usage
+  beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+  vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+  VkBufferCopy copyRegion{};
+  copyRegion.srcOffset = 0; // Optional
+  copyRegion.dstOffset = 0; // Optional
+  copyRegion.size = size;
+  vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+
+  vkEndCommandBuffer(commandBuffer);
+
+  VkSubmitInfo submitInfo{};
+  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  submitInfo.commandBufferCount = 1;
+  submitInfo.pCommandBuffers = &commandBuffer;
+
+  vkQueueSubmit(engineDevice.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+  vkQueueWaitIdle(engineDevice.graphicsQueue);
+  vkFreeCommandBuffers(engineDevice.logicalDevice, engineDevice.commandPool, 1,
+                       &commandBuffer);
+}
+
 void VkModel::createVertexBuffer(std::vector<Vertex> vertices) {
 
   VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
-  createBuffer(bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+
+  // Create a staging buffer as source for cpu accessible then copy over to
+  // actual bufffer
+  VkBuffer stagingBuffer;
+  VkDeviceMemory stagingBufferMemory;
+  createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-               vertexBuffer, vertexBufferMemory);
+               stagingBuffer, stagingBufferMemory);
 
   void *data;
-  vkMapMemory(engineDevice.logicalDevice, vertexBufferMemory, 0, bufferSize, 0,
+  vkMapMemory(engineDevice.logicalDevice, stagingBufferMemory, 0, bufferSize, 0,
               &data);
   memcpy(data, vertices.data(), (size_t)bufferSize);
-  vkUnmapMemory(engineDevice.logicalDevice, vertexBufferMemory);
+  vkUnmapMemory(engineDevice.logicalDevice, stagingBufferMemory);
+
+  createBuffer(
+      bufferSize,
+      VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
+
+  copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
+  vkDestroyBuffer(engineDevice.logicalDevice, stagingBuffer, nullptr);
+  vkFreeMemory(engineDevice.logicalDevice, stagingBufferMemory, nullptr);
 }
 
 uint32_t VkModel::findMemoryType(uint32_t typeFilter,

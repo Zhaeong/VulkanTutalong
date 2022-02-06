@@ -44,11 +44,13 @@ public:
   VkModel(VkEngineDevice &eDevice);
   ~VkModel();
 
+  void createVertexBuffer(std::vector<Vertex> vertices);
+
   void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
                     VkMemoryPropertyFlags properties, VkBuffer &buffer,
                     VkDeviceMemory &bufferMemory);
 
-  void createVertexBuffer(std::vector<Vertex> vertices);
+  void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
   uint32_t findMemoryType(uint32_t typeFilter,
                           VkMemoryPropertyFlags properties);
