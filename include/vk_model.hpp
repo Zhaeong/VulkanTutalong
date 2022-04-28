@@ -39,12 +39,18 @@ public:
   VkBuffer vertexBuffer;
   VkDeviceMemory vertexBufferMemory;
 
+  VkBuffer indexBuffer;
+  VkDeviceMemory indexBufferMemory;
+
   std::vector<Vertex> vertices;
+  std::vector<uint16_t> indices;
 
   VkModel(VkEngineDevice &eDevice);
   ~VkModel();
 
   void createVertexBuffer(std::vector<Vertex> vertices);
+
+  void createIndexBuffer(std::vector<uint16_t> indices);
 
   void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
                     VkMemoryPropertyFlags properties, VkBuffer &buffer,

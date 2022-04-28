@@ -3,15 +3,29 @@
 namespace ve {
 
 VkModel::VkModel(VkEngineDevice &eDevice) : engineDevice{eDevice} {
-  vertices = {{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-              {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-              {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
+
+  // Triangle
+  // vertices = {{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+  //             {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+  //             {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
+
+  vertices = {{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+              {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+              {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+              {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}};
+
+  indices = {0, 1, 2, 2, 3, 0};
+
   createVertexBuffer(vertices);
+  createIndexBuffer(indices);
 }
 
 VkModel::~VkModel() {
   vkDestroyBuffer(engineDevice.logicalDevice, vertexBuffer, nullptr);
   vkFreeMemory(engineDevice.logicalDevice, vertexBufferMemory, nullptr);
+
+  vkDestroyBuffer(engineDevice.logicalDevice, indexBuffer, nullptr);
+  vkFreeMemory(engineDevice.logicalDevice, indexBufferMemory, nullptr);
 }
 
 void VkModel::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
@@ -115,6 +129,34 @@ void VkModel::createVertexBuffer(std::vector<Vertex> vertices) {
       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
 
   copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
+  vkDestroyBuffer(engineDevice.logicalDevice, stagingBuffer, nullptr);
+  vkFreeMemory(engineDevice.logicalDevice, stagingBufferMemory, nullptr);
+}
+
+void VkModel::createIndexBuffer(std::vector<uint16_t> indices) {
+  VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+  VkBuffer stagingBuffer;
+  VkDeviceMemory stagingBufferMemory;
+
+  createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                   VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+               stagingBuffer, stagingBufferMemory);
+
+  void *data;
+
+  vkMapMemory(engineDevice.logicalDevice, stagingBufferMemory, 0, bufferSize, 0,
+              &data);
+  memcpy(data, indices.data(), (size_t)bufferSize);
+
+  vkUnmapMemory(engineDevice.logicalDevice, stagingBufferMemory);
+  createBuffer(
+      bufferSize,
+      VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
+
+  copyBuffer(stagingBuffer, indexBuffer, bufferSize);
+
   vkDestroyBuffer(engineDevice.logicalDevice, stagingBuffer, nullptr);
   vkFreeMemory(engineDevice.logicalDevice, stagingBufferMemory, nullptr);
 }
