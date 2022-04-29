@@ -45,6 +45,7 @@ public:
 
   void drawFrame();
 
+  void updateUniformBuffer(uint32_t currentImage);
   static void framebufferResizeCallback(GLFWwindow *window, int width,
                                         int height);
 };

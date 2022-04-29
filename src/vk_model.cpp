@@ -18,6 +18,8 @@ VkModel::VkModel(VkEngineDevice &eDevice) : engineDevice{eDevice} {
 
   createVertexBuffer(vertices);
   createIndexBuffer(indices);
+  createUniformBuffers();
+  createDescriptorPool();
 }
 
 VkModel::~VkModel() {
@@ -26,6 +28,13 @@ VkModel::~VkModel() {
 
   vkDestroyBuffer(engineDevice.logicalDevice, indexBuffer, nullptr);
   vkFreeMemory(engineDevice.logicalDevice, indexBufferMemory, nullptr);
+
+  for (size_t i = 0; i < VkEngineSwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
+    vkDestroyBuffer(engineDevice.logicalDevice, uniformBuffers[i], nullptr);
+    vkFreeMemory(engineDevice.logicalDevice, uniformBuffersMemory[i], nullptr);
+  }
+
+  vkDestroyDescriptorPool(engineDevice.logicalDevice, descriptorPool, nullptr);
 }
 
 void VkModel::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
@@ -161,6 +170,19 @@ void VkModel::createIndexBuffer(std::vector<uint16_t> indices) {
   vkFreeMemory(engineDevice.logicalDevice, stagingBufferMemory, nullptr);
 }
 
+void VkModel::createUniformBuffers() {
+  VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+  uniformBuffers.resize(VkEngineSwapChain::MAX_FRAMES_IN_FLIGHT);
+  uniformBuffersMemory.resize(VkEngineSwapChain::MAX_FRAMES_IN_FLIGHT);
+
+  for (size_t i = 0; i < VkEngineSwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
+    createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                     VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                 uniformBuffers[i], uniformBuffersMemory[i]);
+  }
+}
+
 uint32_t VkModel::findMemoryType(uint32_t typeFilter,
                                  VkMemoryPropertyFlags properties) {
   VkPhysicalDeviceMemoryProperties memProperties;
@@ -183,4 +205,25 @@ uint32_t VkModel::findMemoryType(uint32_t typeFilter,
   }
   throw std::runtime_error("Failed to find memory type!");
 }
+
+void VkModel::createDescriptorPool() {
+  VkDescriptorPoolSize poolSize{};
+  poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+  poolSize.descriptorCount =
+      static_cast<uint32_t>(VkEngineSwapChain::MAX_FRAMES_IN_FLIGHT);
+
+  VkDescriptorPoolCreateInfo poolInfo{};
+  poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+  poolInfo.poolSizeCount = 1;
+  poolInfo.pPoolSizes = &poolSize;
+
+  poolInfo.maxSets =
+      static_cast<uint32_t>(VkEngineSwapChain::MAX_FRAMES_IN_FLIGHT);
+
+  if (vkCreateDescriptorPool(engineDevice.logicalDevice, &poolInfo, nullptr,
+                             &descriptorPool) != VK_SUCCESS) {
+    throw std::runtime_error("failed to create descriptor pool!");
+  }
+}
+
 } // namespace ve

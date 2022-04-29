@@ -37,6 +37,9 @@ public:
   VkShaderModule vertShaderModule;
   VkShaderModule fragShaderModule;
 
+  VkDescriptorSetLayout descriptorSetLayout = nullptr;
+  std::vector<VkDescriptorSet> descriptorSets;
+
   VkPipelineLayout pipelineLayout = nullptr;
 
   std::string vertexCodeFilePath;
@@ -69,6 +72,9 @@ public:
                                                       uint32_t height);
 
   void bindCommandBufferToGraphicsPipelilne(VkCommandBuffer commandBuffer);
+
+  void createDescriptorSetLayout();
+  void createDescriptorSets();
 };
 
 } // namespace ve

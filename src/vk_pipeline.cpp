@@ -12,6 +12,9 @@ VkEnginePipeline::VkEnginePipeline(VkEngineDevice &eDevice,
                                                               inputModel} {
   vertexCodeFilePath = vertFilepath;
   fragmentCodeFilePath = fragFilepath;
+
+  createDescriptorSetLayout();
+  createDescriptorSets();
   createGraphicsPipeline(pipelineConfig);
 
   createCommandBuffers();
@@ -24,6 +27,9 @@ VkEnginePipeline::~VkEnginePipeline() {
   vkDestroyShaderModule(engineDevice.logicalDevice, vertShaderModule, nullptr);
   vkDestroyPipeline(engineDevice.logicalDevice, graphicsPipeline, nullptr);
   vkDestroyPipelineLayout(engineDevice.logicalDevice, pipelineLayout, nullptr);
+
+  vkDestroyDescriptorSetLayout(engineDevice.logicalDevice, descriptorSetLayout,
+                               nullptr);
 }
 
 std::vector<char> VkEnginePipeline::readFile(std::string filePath) {
@@ -124,8 +130,9 @@ void VkEnginePipeline::createGraphicsPipeline(
 
   VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
   pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-  pipelineLayoutInfo.setLayoutCount = 0;            // Optional
-  pipelineLayoutInfo.pSetLayouts = nullptr;         // Optional
+  pipelineLayoutInfo.setLayoutCount = 1;                 // Optional
+  pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout; // Optional
+
   pipelineLayoutInfo.pushConstantRangeCount = 0;    // Optional
   pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
@@ -231,11 +238,13 @@ VkEnginePipeline::defaultPipelineConfigInfo(uint32_t width, uint32_t height) {
   configInfo.rasterizationInfo.lineWidth = 1.0f;
 
   // type of face culling to use. You can disable culling, cull the front faces,
-  // cull the back faces or both. The frontFace variable specifies the vertex
+  // cull the back faces or both.
+  // The frontFace variable specifies the vertex
   // order for faces to be considered front-facing and can be clockwise or
   // counterclockwise.
   configInfo.rasterizationInfo.cullMode = VK_CULL_MODE_BACK_BIT;
   configInfo.rasterizationInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
+  // configInfo.rasterizationInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 
   // can alter the depth values by adding a constant value or biasing them based
   // on a fragment's slope. This is sometimes used for shadow mapping, but we
@@ -385,6 +394,11 @@ void VkEnginePipeline::createCommandBuffers() {
     //           static_cast<uint32_t>(engineInputModel.vertices.size()), 1, 0,
     //           0);
 
+    // bind the right descriptor
+    vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            pipelineLayout, 0, 1, &descriptorSets[i], 0,
+                            nullptr);
+
     vkCmdDrawIndexed(commandBuffers[i],
                      static_cast<uint32_t>(engineInputModel.indices.size()), 1,
                      0, 0, 0);
@@ -448,6 +462,66 @@ void VkEnginePipeline::cleanupSwapChain() {
 
   vkDestroySwapchainKHR(engineDevice.logicalDevice, engineSwapChain.swapChain,
                         nullptr);
+}
+
+void VkEnginePipeline::createDescriptorSetLayout() {
+  VkDescriptorSetLayoutBinding uboLayoutBinding{};
+  uboLayoutBinding.binding = 0;
+  uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+  uboLayoutBinding.descriptorCount = 1;
+  uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+  uboLayoutBinding.pImmutableSamplers = nullptr;
+
+  VkDescriptorSetLayoutCreateInfo layoutInfo{};
+  layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+  layoutInfo.bindingCount = 1;
+
+  layoutInfo.pBindings = &uboLayoutBinding;
+
+  if (vkCreateDescriptorSetLayout(engineDevice.logicalDevice, &layoutInfo,
+                                  nullptr,
+                                  &descriptorSetLayout) != VK_SUCCESS) {
+    throw std::runtime_error("failed to create descriptor set layout!");
+  }
+}
+
+void VkEnginePipeline::createDescriptorSets() {
+  std::vector<VkDescriptorSetLayout> layouts(
+      VkEngineSwapChain::MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
+
+  VkDescriptorSetAllocateInfo allocInfo{};
+  allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+  allocInfo.descriptorPool = engineInputModel.descriptorPool;
+
+  allocInfo.descriptorSetCount =
+      static_cast<uint32_t>(VkEngineSwapChain::MAX_FRAMES_IN_FLIGHT);
+  allocInfo.pSetLayouts = layouts.data();
+
+  descriptorSets.resize(VkEngineSwapChain::MAX_FRAMES_IN_FLIGHT);
+  if (vkAllocateDescriptorSets(engineDevice.logicalDevice, &allocInfo,
+                               descriptorSets.data()) != VK_SUCCESS) {
+    throw std::runtime_error("failed to allocate descriptor sets!");
+  }
+
+  for (size_t i = 0; i < VkEngineSwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
+    VkDescriptorBufferInfo bufferInfo{};
+    bufferInfo.buffer = engineInputModel.uniformBuffers[i];
+    bufferInfo.offset = 0;
+    bufferInfo.range = sizeof(UniformBufferObject);
+
+    VkWriteDescriptorSet descriptorWrite{};
+    descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrite.dstSet = descriptorSets[i];
+    descriptorWrite.dstBinding = 0;
+    descriptorWrite.dstArrayElement = 0;
+    descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptorWrite.descriptorCount = 1;
+    descriptorWrite.pBufferInfo = &bufferInfo;
+    descriptorWrite.pImageInfo = nullptr;       // Optional
+    descriptorWrite.pTexelBufferView = nullptr; // Optional
+    vkUpdateDescriptorSets(engineDevice.logicalDevice, 1, &descriptorWrite, 0,
+                           nullptr);
+  }
 }
 
 } // namespace ve

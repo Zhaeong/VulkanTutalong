@@ -1,7 +1,13 @@
 #include "vk_device.hpp"
+#include <chrono>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <vector>
+#include <vk_swap_chain.hpp>
 #include <vulkan/vulkan.h>
+
+#define GLM_FORCE_RADIANS
+
 namespace ve {
 
 struct Vertex {
@@ -32,6 +38,24 @@ struct Vertex {
     return attributeDescriptions;
   }
 };
+
+struct UniformBufferObject {
+  glm::mat4 model;
+  glm::mat4 view;
+  glm::mat4 proj;
+
+  static VkDescriptorSetLayoutBinding getUBOLayoutBinding() {
+
+    VkDescriptorSetLayoutBinding uboLayoutBinding{};
+    uboLayoutBinding.binding = 0;
+    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uboLayoutBinding.descriptorCount = 1;
+    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    uboLayoutBinding.pImmutableSamplers = nullptr;
+    return uboLayoutBinding;
+  }
+};
+
 class VkModel {
 public:
   VkEngineDevice &engineDevice;
@@ -42,6 +66,11 @@ public:
   VkBuffer indexBuffer;
   VkDeviceMemory indexBufferMemory;
 
+  std::vector<VkBuffer> uniformBuffers;
+  std::vector<VkDeviceMemory> uniformBuffersMemory;
+
+  VkDescriptorPool descriptorPool;
+
   std::vector<Vertex> vertices;
   std::vector<uint16_t> indices;
 
@@ -51,6 +80,11 @@ public:
   void createVertexBuffer(std::vector<Vertex> vertices);
 
   void createIndexBuffer(std::vector<uint16_t> indices);
+
+  void createUniformBuffers();
+
+  void createDescriptorPool();
+  void createDescriptorSets();
 
   void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
                     VkMemoryPropertyFlags properties, VkBuffer &buffer,
