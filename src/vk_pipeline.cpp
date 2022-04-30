@@ -472,11 +472,22 @@ void VkEnginePipeline::createDescriptorSetLayout() {
   uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
   uboLayoutBinding.pImmutableSamplers = nullptr;
 
+  VkDescriptorSetLayoutBinding samplerLayoutBinding{};
+  samplerLayoutBinding.binding = 1;
+  samplerLayoutBinding.descriptorCount = 1;
+  samplerLayoutBinding.descriptorType =
+      VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+  samplerLayoutBinding.pImmutableSamplers = nullptr;
+  samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+  std::vector<VkDescriptorSetLayoutBinding> bindings = {uboLayoutBinding,
+                                                        samplerLayoutBinding};
+
   VkDescriptorSetLayoutCreateInfo layoutInfo{};
   layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-  layoutInfo.bindingCount = 1;
 
-  layoutInfo.pBindings = &uboLayoutBinding;
+  layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+  layoutInfo.pBindings = bindings.data();
 
   if (vkCreateDescriptorSetLayout(engineDevice.logicalDevice, &layoutInfo,
                                   nullptr,
@@ -509,18 +520,41 @@ void VkEnginePipeline::createDescriptorSets() {
     bufferInfo.offset = 0;
     bufferInfo.range = sizeof(UniformBufferObject);
 
-    VkWriteDescriptorSet descriptorWrite{};
-    descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrite.dstSet = descriptorSets[i];
-    descriptorWrite.dstBinding = 0;
-    descriptorWrite.dstArrayElement = 0;
-    descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    descriptorWrite.descriptorCount = 1;
-    descriptorWrite.pBufferInfo = &bufferInfo;
-    descriptorWrite.pImageInfo = nullptr;       // Optional
-    descriptorWrite.pTexelBufferView = nullptr; // Optional
-    vkUpdateDescriptorSets(engineDevice.logicalDevice, 1, &descriptorWrite, 0,
-                           nullptr);
+    VkDescriptorImageInfo imageInfo{};
+    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageInfo.imageView = engineSwapChain.textureImageView;
+    imageInfo.sampler = engineSwapChain.textureSampler;
+
+    std::vector<VkWriteDescriptorSet> descriptorWrites{};
+
+    VkWriteDescriptorSet descriptorWriteUBO{};
+    descriptorWriteUBO.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWriteUBO.dstSet = descriptorSets[i];
+    descriptorWriteUBO.dstBinding = 0;
+    descriptorWriteUBO.dstArrayElement = 0;
+    descriptorWriteUBO.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptorWriteUBO.descriptorCount = 1;
+    descriptorWriteUBO.pBufferInfo = &bufferInfo;
+    descriptorWriteUBO.pImageInfo = nullptr;       // Optional
+    descriptorWriteUBO.pTexelBufferView = nullptr; // Optional
+    descriptorWrites.push_back(descriptorWriteUBO);
+
+    VkWriteDescriptorSet descriptorWriteImgSampler{};
+    descriptorWriteImgSampler.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWriteImgSampler.dstSet = descriptorSets[i];
+    descriptorWriteImgSampler.dstBinding = 1;
+    descriptorWriteImgSampler.dstArrayElement = 0;
+    descriptorWriteImgSampler.descriptorType =
+        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptorWriteImgSampler.descriptorCount = 1;
+    descriptorWriteImgSampler.pBufferInfo = nullptr;
+    descriptorWriteImgSampler.pImageInfo = &imageInfo;
+    descriptorWriteImgSampler.pTexelBufferView = nullptr; // Optional
+    descriptorWrites.push_back(descriptorWriteImgSampler);
+
+    vkUpdateDescriptorSets(engineDevice.logicalDevice,
+                           static_cast<uint32_t>(descriptorWrites.size()),
+                           descriptorWrites.data(), 0, nullptr);
   }
 }
 

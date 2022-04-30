@@ -9,11 +9,16 @@ VkModel::VkModel(VkEngineDevice &eDevice) : engineDevice{eDevice} {
   //             {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
   //             {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
 
-  vertices = {{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-              {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-              {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-              {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}};
+  // Square
+  //  vertices = {{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+  //              {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+  //              {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+  //              {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}};
 
+  vertices = {{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+              {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+              {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+              {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}};
   indices = {0, 1, 2, 2, 3, 0};
 
   createVertexBuffer(vertices);
@@ -222,15 +227,25 @@ uint32_t VkModel::findMemoryType(uint32_t typeFilter,
 }
 
 void VkModel::createDescriptorPool() {
-  VkDescriptorPoolSize poolSize{};
-  poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  poolSize.descriptorCount =
+
+  std::vector<VkDescriptorPoolSize> poolSizes{};
+
+  VkDescriptorPoolSize poolSizeUBO{};
+  poolSizeUBO.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+  poolSizeUBO.descriptorCount =
       static_cast<uint32_t>(VkEngineDevice::MAX_FRAMES_IN_FLIGHT);
+  poolSizes.push_back(poolSizeUBO);
+
+  VkDescriptorPoolSize poolSizeIMGSampler{};
+  poolSizeIMGSampler.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+  poolSizeIMGSampler.descriptorCount =
+      static_cast<uint32_t>(VkEngineDevice::MAX_FRAMES_IN_FLIGHT);
+  poolSizes.push_back(poolSizeIMGSampler);
 
   VkDescriptorPoolCreateInfo poolInfo{};
   poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-  poolInfo.poolSizeCount = 1;
-  poolInfo.pPoolSizes = &poolSize;
+  poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+  poolInfo.pPoolSizes = poolSizes.data();
 
   poolInfo.maxSets =
       static_cast<uint32_t>(VkEngineDevice::MAX_FRAMES_IN_FLIGHT);

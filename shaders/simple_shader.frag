@@ -1,9 +1,20 @@
 #version 450
 
-layout (location = 0) in vec3 inColor;
-layout (location = 0) out vec4 outColor;
+
+layout(location = 0) in vec3 fragColor;
+layout(location = 1) in vec2 fragTexCoord;
+
+layout(location = 0) out vec4 outColor;
+layout(binding = 1) uniform sampler2D texSampler;
 
 void main() {
-    //rgb, alpha
-    outColor = vec4(inColor, 1.0);
+    //For visualizing heights
+    //outColor = vec4(fragTexCoord, 0.0, 1.0);
+    //Repeating texture
+    //outColor = texture(texSampler, fragTexCoord * 2);
+
+    //outColor = texture(texSampler, fragTexCoord * 2);
+
+    //using vertex colors to scale, alpha channel not scaled by rgba
+    outColor = vec4(fragColor * texture(texSampler, fragTexCoord).rgb, 1.0);
 }

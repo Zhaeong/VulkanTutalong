@@ -24,6 +24,9 @@ public:
 
   VkImageView textureImageView;
 
+  // sampler
+  VkSampler textureSampler;
+
   // renderpass
   VkRenderPass renderPass;
 
@@ -40,7 +43,12 @@ public:
   ~VkEngineSwapChain();
 
   void createSwapChain();
+
+  VkImageView createImageView(VkImage image, VkFormat format);
   void createImageViews();
+  void createTextureImageView();
+
+  void createTextureSampler();
 
   void createRenderPass();
   void createFramebuffers();

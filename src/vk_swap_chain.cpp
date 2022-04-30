@@ -6,6 +6,8 @@ VkEngineSwapChain::VkEngineSwapChain(VkEngineDevice &eDevice, VkModel &model)
 
   createSwapChain();
   createImageViews();
+  createTextureImageView();
+  createTextureSampler();
   createRenderPass();
   createFramebuffers();
   createSyncObjects();
@@ -18,6 +20,11 @@ VkEngineSwapChain::~VkEngineSwapChain() {
     vkDestroyImageView(engineDevice.logicalDevice, imageView, nullptr);
   }
   swapChainImageViews.clear();
+
+  vkDestroySampler(engineDevice.logicalDevice, textureSampler, nullptr);
+
+  vkDestroyImageView(engineDevice.logicalDevice, textureImageView, nullptr);
+
   vkDestroySwapchainKHR(engineDevice.logicalDevice, swapChain, nullptr);
 
   vkDestroyRenderPass(engineDevice.logicalDevice, renderPass, nullptr);
@@ -188,42 +195,55 @@ void VkEngineSwapChain::createSwapChain() {
                           swapChainImages.data());
 }
 
+VkImageView VkEngineSwapChain::createImageView(VkImage image, VkFormat format) {
+  VkImageViewCreateInfo viewInfo{};
+  viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+  viewInfo.image = image;
+
+  // The viewType and format fields specify how the image data should be
+  // interpreted. The viewType parameter allows you to treat images as 1D
+  // textures, 2D textures, 3D textures and cube maps.
+  viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+  viewInfo.format = format;
+
+  // allows you to swizzle the color channels around. For example, you can map
+  // all of the channels to the red channel for a monochrome texture. You can
+  // also map constant values of 0 and 1 to a channel.
+  // viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+  // viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+  // viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+  // viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+  // subresourceRange field describes what the image's purpose is and which
+  // part of the image should be accessed. Our images will be used as color
+  // targets without any mipmapping levels or multiple layers.
+  viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+  viewInfo.subresourceRange.baseMipLevel = 0;
+  viewInfo.subresourceRange.levelCount = 1;
+  viewInfo.subresourceRange.baseArrayLayer = 0;
+  viewInfo.subresourceRange.layerCount = 1;
+
+  VkImageView imageView;
+  if (vkCreateImageView(engineDevice.logicalDevice, &viewInfo, nullptr,
+                        &imageView) != VK_SUCCESS) {
+    throw std::runtime_error("failed to create texture image view!");
+  }
+
+  return imageView;
+}
 void VkEngineSwapChain::createImageViews() {
   swapChainImageViews.resize(swapChainImages.size());
 
   for (size_t i = 0; i < swapChainImages.size(); i++) {
+    swapChainImageViews[i] =
+        createImageView(swapChainImages[i], swapChainImageFormat);
     VkImageViewCreateInfo createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    createInfo.image = swapChainImages[i];
-
-    // The viewType and format fields specify how the image data should be
-    // interpreted. The viewType parameter allows you to treat images as 1D
-    // textures, 2D textures, 3D textures and cube maps.
-    createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    createInfo.format = swapChainImageFormat;
-
-    // allows you to swizzle the color channels around. For example, you can map
-    // all of the channels to the red channel for a monochrome texture. You can
-    // also map constant values of 0 and 1 to a channel.
-    createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-    createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-    createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-    createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-
-    // subresourceRange field describes what the image's purpose is and which
-    // part of the image should be accessed. Our images will be used as color
-    // targets without any mipmapping levels or multiple layers.
-    createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    createInfo.subresourceRange.baseMipLevel = 0;
-    createInfo.subresourceRange.levelCount = 1;
-    createInfo.subresourceRange.baseArrayLayer = 0;
-    createInfo.subresourceRange.layerCount = 1;
-
-    if (vkCreateImageView(engineDevice.logicalDevice, &createInfo, nullptr,
-                          &swapChainImageViews[i]) != VK_SUCCESS) {
-      throw std::runtime_error("failed to create image views!");
-    }
   }
+}
+
+void VkEngineSwapChain::createTextureImageView() {
+  textureImageView =
+      createImageView(inputModel.textureImage, VK_FORMAT_R8G8B8A8_SRGB);
 }
 
 void VkEngineSwapChain::createRenderPass() {
@@ -323,6 +343,44 @@ void VkEngineSwapChain::createSyncObjects() {
 
       throw std::runtime_error("failed to create sync objects!");
     }
+  }
+}
+
+void VkEngineSwapChain::createTextureSampler() {
+  VkSamplerCreateInfo samplerInfo{};
+  samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+  samplerInfo.magFilter = VK_FILTER_LINEAR;
+  samplerInfo.minFilter = VK_FILTER_LINEAR;
+
+  // https://vulkan-tutorial.com/Texture_mapping/Image_view_and_sampler
+  samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+  samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+  samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+
+  VkPhysicalDeviceProperties properties{};
+  vkGetPhysicalDeviceProperties(engineDevice.physicalDevice, &properties);
+
+  // Can also just disable if feature not supported
+  // samplerInfo.anisotropyEnable = VK_FALSE;
+  // samplerInfo.maxAnisotropy = 1.0f;
+  samplerInfo.anisotropyEnable = VK_TRUE;
+  samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+
+  samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+
+  samplerInfo.unnormalizedCoordinates = VK_FALSE;
+
+  samplerInfo.compareEnable = VK_FALSE;
+  samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+
+  samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+  samplerInfo.mipLodBias = 0.0f;
+  samplerInfo.minLod = 0.0f;
+  samplerInfo.maxLod = 0.0f;
+
+  if (vkCreateSampler(engineDevice.logicalDevice, &samplerInfo, nullptr,
+                      &textureSampler) != VK_SUCCESS) {
+    throw std::runtime_error("failed to create texture sampler!");
   }
 }
 

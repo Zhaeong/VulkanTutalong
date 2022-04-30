@@ -251,7 +251,8 @@ bool VkEngineDevice::isDeviceSuitable(VkPhysicalDevice device) {
 
   return indices.graphicsFamily.has_value() &&
          indices.presentFamily.has_value() &&
-         checkDeviceExtensionSupport(device) && swapChainAdequate;
+         checkDeviceExtensionSupport(device) && swapChainAdequate &&
+         deviceFeatures.samplerAnisotropy;
 }
 
 bool VkEngineDevice::checkDeviceExtensionSupport(VkPhysicalDevice device) {
@@ -340,6 +341,9 @@ void VkEngineDevice::createLogicalDevice() {
 
   // Specifying used device features
   VkPhysicalDeviceFeatures deviceFeatures{};
+
+  // enable anisotropy
+  deviceFeatures.samplerAnisotropy = VK_TRUE;
 
   VkDeviceCreateInfo createInfo{};
   createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
