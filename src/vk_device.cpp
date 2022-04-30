@@ -267,8 +267,8 @@ bool VkEngineDevice::checkDeviceExtensionSupport(VkPhysicalDevice device) {
                                            deviceExtensions.end());
 
   for (int i = 0; i < availableExtensions.size(); i++) {
-    std::cout << "Avail: " << availableExtensions[i].extensionName
-              << " Version: " << availableExtensions[i].specVersion << "\n";
+    // std::cout << "Avail: " << availableExtensions[i].extensionName
+    //           << " Version: " << availableExtensions[i].specVersion << "\n";
     requiredExtensions.erase(availableExtensions[i].extensionName);
   }
   if (requiredExtensions.empty()) {

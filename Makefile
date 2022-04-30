@@ -28,6 +28,8 @@ OBJDIR = obj
 BINDIR = bin
 HDRDIR = include
 
+STB_INCLUDE_PATH =  D:\Github\VulkanTutalong\external	
+
 SRCS = $(wildcard $(SRCDIR)/*.cpp)
 
 HEADERS = $(wildcard $(HDRDIR)/*.hpp)
@@ -42,7 +44,8 @@ EXENAME = VulkanTry
 INCLUDES = -Iinclude                                                     \
 		   -IC:\glfw-3.3.6\include										 \
 		   -IC:\VulkanSDK\1.2.198.1\Include								 \
-		   -IC:\VulkanSDK\1.2.198.1\Third-Party\Include
+		   -IC:\VulkanSDK\1.2.198.1\Third-Party\Include					 \
+		   -I$(STB_INCLUDE_PATH)
 
 LIBS = -LC:\glfw-3.3.6\lib-mingw-w64					\
 	   -LC:\VulkanSDK\1.2.198.1\Lib						\
