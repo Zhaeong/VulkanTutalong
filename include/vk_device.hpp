@@ -35,6 +35,7 @@ public:
 
   VkSurfaceKHR surface;
 
+  static const int MAX_FRAMES_IN_FLIGHT = 3;
   // actual physical device
   VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
   // logical device

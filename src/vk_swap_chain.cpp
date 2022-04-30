@@ -1,8 +1,8 @@
 #include "vk_swap_chain.hpp"
 namespace ve {
 
-VkEngineSwapChain::VkEngineSwapChain(VkEngineDevice &eDevice)
-    : engineDevice{eDevice} {
+VkEngineSwapChain::VkEngineSwapChain(VkEngineDevice &eDevice, VkModel &model)
+    : engineDevice{eDevice}, inputModel{model} {
 
   createSwapChain();
   createImageViews();
@@ -27,7 +27,7 @@ VkEngineSwapChain::~VkEngineSwapChain() {
   }
   swapChainImageViews.clear();
 
-  for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+  for (int i = 0; i < VkEngineDevice::MAX_FRAMES_IN_FLIGHT; i++) {
     vkDestroySemaphore(engineDevice.logicalDevice, renderFinishedSemaphore[i],
                        nullptr);
     vkDestroySemaphore(engineDevice.logicalDevice, imageAvailableSemaphore[i],
@@ -304,15 +304,15 @@ void VkEngineSwapChain::createSyncObjects() {
   // signalled for else in render loop it'll wait forever for signalled fence
   fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-  imageAvailableSemaphore.resize(MAX_FRAMES_IN_FLIGHT);
-  renderFinishedSemaphore.resize(MAX_FRAMES_IN_FLIGHT);
-  inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+  imageAvailableSemaphore.resize(VkEngineDevice::MAX_FRAMES_IN_FLIGHT);
+  renderFinishedSemaphore.resize(VkEngineDevice::MAX_FRAMES_IN_FLIGHT);
+  inFlightFences.resize(VkEngineDevice::MAX_FRAMES_IN_FLIGHT);
 
   // initially not a single frame is using a swap chain image so we don't have a
   // fence
   imagesInFlight.resize(swapChainImages.size(), VK_NULL_HANDLE);
 
-  for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+  for (int i = 0; i < VkEngineDevice::MAX_FRAMES_IN_FLIGHT; i++) {
 
     if (vkCreateSemaphore(engineDevice.logicalDevice, &semaphoreInfo, nullptr,
                           &imageAvailableSemaphore[i]) != VK_SUCCESS ||

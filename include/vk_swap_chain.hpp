@@ -1,14 +1,17 @@
 #pragma once
 
 #include "vk_device.hpp"
+#include "vk_model.hpp"
 #include <iostream>
 #include <vector>
 #include <vulkan/vulkan.h>
 
 namespace ve {
+
 class VkEngineSwapChain {
 public:
   VkEngineDevice &engineDevice;
+  VkModel &inputModel;
 
   VkSwapchainKHR swapChain;
   std::vector<VkImage> swapChainImages;
@@ -19,12 +22,13 @@ public:
   // image views
   std::vector<VkImageView> swapChainImageViews;
 
+  VkImageView textureImageView;
+
   // renderpass
   VkRenderPass renderPass;
 
   std::vector<VkFramebuffer> swapChainFramebuffers;
 
-  static const int MAX_FRAMES_IN_FLIGHT = 3;
   std::vector<VkSemaphore> imageAvailableSemaphore;
   std::vector<VkSemaphore> renderFinishedSemaphore;
   std::vector<VkFence> inFlightFences;
@@ -32,7 +36,7 @@ public:
   // For each image in the swap chain
   std::vector<VkFence> imagesInFlight;
 
-  VkEngineSwapChain(VkEngineDevice &eDevice);
+  VkEngineSwapChain(VkEngineDevice &eDevice, VkModel &model);
   ~VkEngineSwapChain();
 
   void createSwapChain();

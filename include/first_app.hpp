@@ -20,9 +20,9 @@ public:
 
   VkEngineDevice vkEngineDevice{vkWindow};
 
-  VkEngineSwapChain vkEngineSwapChain{vkEngineDevice};
-
   VkModel vkModel{vkEngineDevice};
+
+  VkEngineSwapChain vkEngineSwapChain{vkEngineDevice, vkModel};
 
   VkEnginePipeline vkEnginePipeline{
       vkEngineDevice,

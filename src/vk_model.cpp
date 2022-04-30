@@ -30,7 +30,7 @@ VkModel::~VkModel() {
   vkDestroyBuffer(engineDevice.logicalDevice, indexBuffer, nullptr);
   vkFreeMemory(engineDevice.logicalDevice, indexBufferMemory, nullptr);
 
-  for (size_t i = 0; i < VkEngineSwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
+  for (size_t i = 0; i < VkEngineDevice::MAX_FRAMES_IN_FLIGHT; i++) {
     vkDestroyBuffer(engineDevice.logicalDevice, uniformBuffers[i], nullptr);
     vkFreeMemory(engineDevice.logicalDevice, uniformBuffersMemory[i], nullptr);
   }
@@ -187,10 +187,10 @@ void VkModel::createIndexBuffer(std::vector<uint16_t> indices) {
 
 void VkModel::createUniformBuffers() {
   VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-  uniformBuffers.resize(VkEngineSwapChain::MAX_FRAMES_IN_FLIGHT);
-  uniformBuffersMemory.resize(VkEngineSwapChain::MAX_FRAMES_IN_FLIGHT);
+  uniformBuffers.resize(VkEngineDevice::MAX_FRAMES_IN_FLIGHT);
+  uniformBuffersMemory.resize(VkEngineDevice::MAX_FRAMES_IN_FLIGHT);
 
-  for (size_t i = 0; i < VkEngineSwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
+  for (size_t i = 0; i < VkEngineDevice::MAX_FRAMES_IN_FLIGHT; i++) {
     createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -225,7 +225,7 @@ void VkModel::createDescriptorPool() {
   VkDescriptorPoolSize poolSize{};
   poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
   poolSize.descriptorCount =
-      static_cast<uint32_t>(VkEngineSwapChain::MAX_FRAMES_IN_FLIGHT);
+      static_cast<uint32_t>(VkEngineDevice::MAX_FRAMES_IN_FLIGHT);
 
   VkDescriptorPoolCreateInfo poolInfo{};
   poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -233,7 +233,7 @@ void VkModel::createDescriptorPool() {
   poolInfo.pPoolSizes = &poolSize;
 
   poolInfo.maxSets =
-      static_cast<uint32_t>(VkEngineSwapChain::MAX_FRAMES_IN_FLIGHT);
+      static_cast<uint32_t>(VkEngineDevice::MAX_FRAMES_IN_FLIGHT);
 
   if (vkCreateDescriptorPool(engineDevice.logicalDevice, &poolInfo, nullptr,
                              &descriptorPool) != VK_SUCCESS) {

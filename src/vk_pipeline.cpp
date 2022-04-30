@@ -487,23 +487,23 @@ void VkEnginePipeline::createDescriptorSetLayout() {
 
 void VkEnginePipeline::createDescriptorSets() {
   std::vector<VkDescriptorSetLayout> layouts(
-      VkEngineSwapChain::MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
+      VkEngineDevice::MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
 
   VkDescriptorSetAllocateInfo allocInfo{};
   allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
   allocInfo.descriptorPool = engineInputModel.descriptorPool;
 
   allocInfo.descriptorSetCount =
-      static_cast<uint32_t>(VkEngineSwapChain::MAX_FRAMES_IN_FLIGHT);
+      static_cast<uint32_t>(VkEngineDevice::MAX_FRAMES_IN_FLIGHT);
   allocInfo.pSetLayouts = layouts.data();
 
-  descriptorSets.resize(VkEngineSwapChain::MAX_FRAMES_IN_FLIGHT);
+  descriptorSets.resize(VkEngineDevice::MAX_FRAMES_IN_FLIGHT);
   if (vkAllocateDescriptorSets(engineDevice.logicalDevice, &allocInfo,
                                descriptorSets.data()) != VK_SUCCESS) {
     throw std::runtime_error("failed to allocate descriptor sets!");
   }
 
-  for (size_t i = 0; i < VkEngineSwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
+  for (size_t i = 0; i < VkEngineDevice::MAX_FRAMES_IN_FLIGHT; i++) {
     VkDescriptorBufferInfo bufferInfo{};
     bufferInfo.buffer = engineInputModel.uniformBuffers[i];
     bufferInfo.offset = 0;

@@ -139,7 +139,7 @@ void FirstApp::drawFrame() {
   vkQueueWaitIdle(vkEngineDevice.presentQueue);
 
   // update the current frame so it goes to the next one
-  currentFrame = (currentFrame + 1) % vkEngineSwapChain.MAX_FRAMES_IN_FLIGHT;
+  currentFrame = (currentFrame + 1) % VkEngineDevice::MAX_FRAMES_IN_FLIGHT;
 }
 
 void FirstApp::framebufferResizeCallback(GLFWwindow *window, int width,
