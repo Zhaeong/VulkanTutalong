@@ -66,7 +66,6 @@ public:
   void pickPhysicalDevice();
   void createLogicalDevice();
   void createSwapChain();
-  void createImageViews();
 
   bool checkValidationLayerSupport();
   std::vector<const char *> getRequiredVkExtensions();
