@@ -11,6 +11,14 @@
             "target": "./bin/VulkanTry.exe",
             "cwd": "${workspaceRoot}",
             "valuesFormatting": "parseText"
+        },
+        {
+            "name": "DebugLinux",
+            "type": "gdb",
+            "request": "launch",
+            "target": "./bin/VulkanTry",
+            "cwd": "${workspaceRoot}",
+            "valuesFormatting": "parseText"
         }
     ]
 }
