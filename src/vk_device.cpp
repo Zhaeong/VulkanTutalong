@@ -94,7 +94,11 @@ bool VkEngineDevice::checkValidationLayerSupport() {
 
     bool layerFound = false;
 
+    //std::cout << "Layer :" << validationLayers[i] << "\n";
+
     for (int j = 0; j < availableLayers.size(); j++) {
+      
+      std::cout << "Avail Layer :" << availableLayers[j].layerName << "\n";
 
       //== compairs pointers
       // strcmp compairs actual string content
