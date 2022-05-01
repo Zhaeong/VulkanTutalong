@@ -55,7 +55,7 @@ INCLUDES = -Iinclude                                                     \
 		   -I$(STB_INCLUDE_PATH)
 
 
-LIBS = -L/home/owen/Documents/1.3.211.0/1.2.198.1/x86_64/Lib						\
+LIBS = -L/home/owen/Documents/1.3.211.0/x86_64/lib						
 
 #Need to put the linkers at the end of the call
 $(BINDIR)/$(EXENAME): $(OBJFILES)
