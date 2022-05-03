@@ -94,10 +94,10 @@ bool VkEngineDevice::checkValidationLayerSupport() {
 
     bool layerFound = false;
 
-    //std::cout << "Layer :" << validationLayers[i] << "\n";
+    // std::cout << "Layer :" << validationLayers[i] << "\n";
 
     for (int j = 0; j < availableLayers.size(); j++) {
-      
+
       std::cout << "Avail Layer :" << availableLayers[j].layerName << "\n";
 
       //== compairs pointers
@@ -125,7 +125,7 @@ std::vector<const char *> VkEngineDevice::getRequiredVkExtensions() {
   // vector(pointer_to_first_element, pointer_after_final_element)
   // glfwExtensions is pointer to first element
   // glfwExtensions + 1 is pointer to second element
-  // std::cout << "tria:" << *(glfwExtensions + 1) << "\n";
+  std::cout << "tria:" << *(glfwExtensions + 1) << "\n";
   // glfwExtensions + glfwExtensionCount is pointer to last element
   std::vector<const char *> requiredVkExtensionsForGLFW(
       glfwExtensions, glfwExtensions + glfwExtensionCount);

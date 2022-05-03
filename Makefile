@@ -42,13 +42,15 @@ HEADERFILES = $(patsubst $(HDRDIR)/%,%,$(HEADERS))
 EXENAME = VulkanTry
 
 INCLUDES = -Iinclude                                                     \
+		   -I$(STB_INCLUDE_PATH)										 \
 		   -IC:\glfw-3.3.6\include										 \
-		   -IC:\VulkanSDK\1.2.198.1\Include								 \
-		   -IC:\VulkanSDK\1.2.198.1\Third-Party\Include					 \
-		   -I$(STB_INCLUDE_PATH)
+		   -IC:\VulkanSDK\1.3.211.0\Include								 \
+		   -IC:\VulkanSDK\1.3.211.0\Third-Party\Include					 \
 
 LIBS = -LC:\glfw-3.3.6\lib-mingw-w64					\
-	   -LC:\VulkanSDK\1.2.198.1\Lib						\
+	   -LC:\VulkanSDK\1.3.211.0\Lib						\
+
+#	   -LC:\VulkanSDK\1.2.198.1\Lib						\
 
 #Need to put the linkers at the end of the call
 $(BINDIR)/$(EXENAME): $(OBJFILES)
